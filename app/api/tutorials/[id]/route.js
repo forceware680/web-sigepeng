@@ -1,97 +1,11 @@
-import { put, list, del } from '@vercel/blob';
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { readTutorials, writeTutorials, getTutorialBySlug } from '@/lib/tutorials';
 
-const BLOB_FILENAME = 'tutorials.json';
-
-// Check if running on Vercel (production) or localhost
-const isVercel = process.env.VERCEL === '1';
-const dataFilePath = path.join(process.cwd(), 'data', 'tutorials.json');
-
-// Read tutorials from local file (for development)
-function readLocalTutorials() {
-    try {
-        const data = fs.readFileSync(dataFilePath, 'utf8');
-        return JSON.parse(data);
-    } catch {
-        return [];
-    }
-}
-
-// Write tutorials to local file (for development)
-function writeLocalTutorials(tutorials) {
-    fs.writeFileSync(dataFilePath, JSON.stringify(tutorials, null, 2));
-}
-
-// Read tutorials from Vercel Blob
-async function readBlobTutorials() {
-    try {
-        const { blobs } = await list();
-        const tutorialBlob = blobs.find(b => b.pathname === BLOB_FILENAME);
-
-        if (!tutorialBlob) {
-            // Initialize with local data if blob doesn't exist
-            const localData = readLocalTutorials();
-            if (localData.length > 0) {
-                await writeBlobTutorials(localData);
-            }
-            return localData;
-        }
-
-        const response = await fetch(tutorialBlob.url);
-        return await response.json();
-    } catch (error) {
-        console.error('Error reading from blob:', error);
-        return [];
-    }
-}
-
-// Write tutorials to Vercel Blob
-async function writeBlobTutorials(tutorials) {
-    try {
-        // Delete old blob if exists
-        const { blobs } = await list();
-        const existingBlob = blobs.find(b => b.pathname === BLOB_FILENAME);
-        if (existingBlob) {
-            await del(existingBlob.url);
-        }
-
-        // Create new blob
-        await put(BLOB_FILENAME, JSON.stringify(tutorials, null, 2), {
-            access: 'public',
-            contentType: 'application/json'
-        });
-    } catch (error) {
-        console.error('Error writing to blob:', error);
-        throw error;
-    }
-}
-
-// Universal read function
-async function readTutorials() {
-    if (isVercel) {
-        return await readBlobTutorials();
-    } else {
-        return readLocalTutorials();
-    }
-}
-
-// Universal write function
-async function writeTutorials(tutorials) {
-    if (isVercel) {
-        await writeBlobTutorials(tutorials);
-    } else {
-        writeLocalTutorials(tutorials);
-    }
-}
-
-// GET single tutorial by ID
+// GET single tutorial by ID or slug
 export async function GET(request, { params }) {
     try {
         const { id } = await params;
-        const tutorials = await readTutorials();
-        const tutorial = tutorials.find(t => t.id === id || t.slug === id);
+        const tutorial = await getTutorialBySlug(id);
 
         if (!tutorial) {
             return NextResponse.json({ error: 'Tutorial not found' }, { status: 404 });
