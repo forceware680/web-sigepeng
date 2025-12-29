@@ -19,12 +19,28 @@ export async function POST(request) {
         const body = await request.json();
         const tutorials = await readTutorials();
 
+        // Process media - support both old videoId format and new media array
+        let media = [];
+        if (body.media && Array.isArray(body.media)) {
+            media = body.media;
+        } else if (body.videoId) {
+            // Backward compatibility: convert single videoId to media array
+            media.push({
+                id: `media-${Date.now()}`,
+                type: 'video',
+                videoId: body.videoId,
+                title: 'Video Tutorial',
+                caption: ''
+            });
+        }
+
         const newTutorial = {
             id: `tutorial-${Date.now()}`,
             title: body.title,
             slug: body.slug || body.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-            content: body.content,
-            videoId: body.videoId || '',
+            categoryId: body.categoryId || 'category-default',
+            content: body.content || '',
+            media: media,
             order: body.order || tutorials.length + 1,
             createdAt: new Date().toISOString()
         };
@@ -38,3 +54,4 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Failed to create tutorial' }, { status: 500 });
     }
 }
+

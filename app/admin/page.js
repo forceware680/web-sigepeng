@@ -9,6 +9,7 @@ export default function AdminDashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [tutorials, setTutorials] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,19 +19,43 @@ export default function AdminDashboard() {
     }, [status, router]);
 
     useEffect(() => {
-        fetchTutorials();
+        fetchData();
     }, []);
 
-    const fetchTutorials = async () => {
+    const fetchData = async () => {
         try {
-            const res = await fetch('/api/tutorials');
-            const data = await res.json();
-            setTutorials(data);
+            const [tutRes, catRes] = await Promise.all([
+                fetch('/api/tutorials'),
+                fetch('/api/categories')
+            ]);
+            const tutData = await tutRes.json();
+            const catData = await catRes.json();
+            setTutorials(Array.isArray(tutData) ? tutData : []);
+            setCategories(Array.isArray(catData) ? catData : []);
         } catch (error) {
-            console.error('Failed to fetch tutorials:', error);
+            console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const getCategoryName = (categoryId) => {
+        const category = categories.find(c => c.id === categoryId);
+        return category ? category.name : '-';
+    };
+
+    const getMediaCount = (tutorial) => {
+        if (tutorial.media && tutorial.media.length > 0) {
+            const videos = tutorial.media.filter(m => m.type === 'video').length;
+            const images = tutorial.media.filter(m => m.type === 'image').length;
+            const parts = [];
+            if (videos > 0) parts.push(`${videos} video`);
+            if (images > 0) parts.push(`${images} gambar`);
+            return parts.join(', ') || '-';
+        }
+        // Legacy format
+        if (tutorial.videoId) return '1 video';
+        return '-';
     };
 
     const handleDelete = async (id) => {
@@ -38,7 +63,7 @@ export default function AdminDashboard() {
 
         try {
             await fetch(`/api/tutorials/${id}`, { method: 'DELETE' });
-            fetchTutorials();
+            fetchData();
         } catch (error) {
             console.error('Failed to delete:', error);
         }
@@ -67,7 +92,10 @@ export default function AdminDashboard() {
 
             <div className="admin-actions">
                 <Link href="/admin/create" className="btn-primary">
-                    ➕ Tambah Tutorial Baru
+                    ➕ Tambah Tutorial
+                </Link>
+                <Link href="/admin/categories" className="btn-secondary">
+                    📁 Kelola Kategori
                 </Link>
             </div>
 
@@ -77,8 +105,8 @@ export default function AdminDashboard() {
                         <tr>
                             <th>No</th>
                             <th>Judul</th>
-                            <th>Slug</th>
-                            <th>Video ID</th>
+                            <th>Kategori</th>
+                            <th>Media</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -87,8 +115,8 @@ export default function AdminDashboard() {
                             <tr key={tutorial.id}>
                                 <td>{index + 1}</td>
                                 <td>{tutorial.title}</td>
-                                <td><code>{tutorial.slug}</code></td>
-                                <td><code>{tutorial.videoId || '-'}</code></td>
+                                <td>{getCategoryName(tutorial.categoryId)}</td>
+                                <td><code>{getMediaCount(tutorial)}</code></td>
                                 <td className="action-buttons">
                                     <Link href={`/admin/edit/${tutorial.id}`} className="btn-edit">
                                         ✏️ Edit
@@ -111,3 +139,4 @@ export default function AdminDashboard() {
         </div>
     );
 }
+

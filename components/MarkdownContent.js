@@ -1,7 +1,69 @@
 'use client';
 
+import YouTubeEmbed from './YouTubeEmbed';
+import ImageEmbed from './ImageEmbed';
+
 export default function MarkdownContent({ content }) {
     if (!content) return null;
+
+    // Parse content and extract embeds
+    const parseContent = (text) => {
+        const parts = [];
+        let currentText = '';
+        let key = 0;
+
+        // Split by embed patterns
+        const embedPattern = /\[(VIDEO|IMAGE):([^\]]+)\]/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = embedPattern.exec(text)) !== null) {
+            // Add text before this match
+            if (match.index > lastIndex) {
+                const textBefore = text.substring(lastIndex, match.index);
+                if (textBefore.trim()) {
+                    parts.push({
+                        type: 'text',
+                        content: textBefore,
+                        key: key++
+                    });
+                }
+            }
+
+            // Add embed
+            if (match[1] === 'VIDEO') {
+                parts.push({
+                    type: 'video',
+                    videoId: match[2].trim(),
+                    key: key++
+                });
+            } else if (match[1] === 'IMAGE') {
+                const [url, caption] = match[2].split('|').map(s => s.trim());
+                parts.push({
+                    type: 'image',
+                    url: url,
+                    caption: caption || '',
+                    key: key++
+                });
+            }
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // Add remaining text
+        if (lastIndex < text.length) {
+            const remaining = text.substring(lastIndex);
+            if (remaining.trim()) {
+                parts.push({
+                    type: 'text',
+                    content: remaining,
+                    key: key++
+                });
+            }
+        }
+
+        return parts;
+    };
 
     // Simple markdown to HTML converter
     const parseMarkdown = (text) => {
@@ -18,6 +80,8 @@ export default function MarkdownContent({ content }) {
             .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
             // Inline code
             .replace(/`(.*?)`/g, '<code>$1</code>')
+            // Links
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
             // Unordered lists
             .replace(/^\- (.*$)/gim, '<li>$1</li>')
             // Ordered lists
@@ -27,12 +91,53 @@ export default function MarkdownContent({ content }) {
             .replace(/\n/g, '<br />');
     };
 
-    const html = `<p>${parseMarkdown(content)}</p>`;
+    const parts = parseContent(content);
 
+    // If no embeds found, just render as markdown
+    if (parts.length === 0 || (parts.length === 1 && parts[0].type === 'text')) {
+        const html = `<p>${parseMarkdown(content)}</p>`;
+        return (
+            <div
+                className="markdown-content"
+                dangerouslySetInnerHTML={{ __html: html }}
+            />
+        );
+    }
+
+    // Render parts with embeds
     return (
-        <div
-            className="markdown-content"
-            dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="markdown-content">
+            {parts.map((part) => {
+                if (part.type === 'video') {
+                    return (
+                        <div key={part.key} className="content-embed">
+                            <YouTubeEmbed videoId={part.videoId} title="Embedded Video" />
+                        </div>
+                    );
+                }
+
+                if (part.type === 'image') {
+                    return (
+                        <div key={part.key} className="content-embed">
+                            <ImageEmbed
+                                url={part.url}
+                                caption={part.caption}
+                                alt={part.caption || "Tutorial image"}
+                            />
+                        </div>
+                    );
+                }
+
+                // Text content
+                const html = `<p>${parseMarkdown(part.content)}</p>`;
+                return (
+                    <div
+                        key={part.key}
+                        dangerouslySetInnerHTML={{ __html: html }}
+                    />
+                );
+            })}
+        </div>
     );
 }
+

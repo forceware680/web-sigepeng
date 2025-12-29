@@ -1,11 +1,21 @@
 [
   {
     "id": "tutorial-1",
-    "title": "Tutorial Pengeluaran Menggunakan [Sigepeng]",
+    "title": "Tutorial Pengeluaran Menggunakan Sigepeng",
     "slug": "tutor-pengeluaran",
-    "content": "Tutorial Cara Mengeluarkan Barang Persediaan Menggunakan Metode [Sigepeng]",
-    "videoId": "6YaAVDhljL4",
+    "content": "Tutorial Cara Mengeluarkan Barang Persediaan Menggunakan Metode Sigepeng",
     "order": 1,
-    "createdAt": "2024-12-29T00:00:00.000Z"
+    "createdAt": "2024-12-29T00:00:00.000Z",
+    "categoryId": "category-default",
+    "media": [
+      {
+        "id": "media-1766992168077",
+        "type": "video",
+        "videoId": "6YaAVDhljL4",
+        "title": "Video Tutorial",
+        "caption": ""
+      }
+    ],
+    "updatedAt": "2025-12-29T07:09:38.643Z"
   }
 ]

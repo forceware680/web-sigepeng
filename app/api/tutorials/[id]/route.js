@@ -30,14 +30,25 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ error: 'Tutorial not found' }, { status: 404 });
         }
 
+        // Handle media update
+        let media = tutorials[index].media || [];
+        if (body.media !== undefined) {
+            media = body.media;
+        }
+
         tutorials[index] = {
             ...tutorials[index],
-            title: body.title || tutorials[index].title,
-            slug: body.slug || tutorials[index].slug,
-            content: body.content || tutorials[index].content,
-            videoId: body.videoId !== undefined ? body.videoId : tutorials[index].videoId,
-            order: body.order || tutorials[index].order,
+            title: body.title ?? tutorials[index].title,
+            slug: body.slug ?? tutorials[index].slug,
+            categoryId: body.categoryId ?? tutorials[index].categoryId ?? 'category-default',
+            content: body.content ?? tutorials[index].content,
+            media: media,
+            order: body.order ?? tutorials[index].order,
+            updatedAt: new Date().toISOString()
         };
+
+        // Remove old videoId if exists
+        delete tutorials[index].videoId;
 
         await writeTutorials(tutorials);
         return NextResponse.json(tutorials[index]);

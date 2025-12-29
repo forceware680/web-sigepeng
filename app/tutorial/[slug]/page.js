@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import YouTubeEmbed from '@/components/YouTubeEmbed';
+import MediaGallery from '@/components/MediaGallery';
 import MarkdownContent from '@/components/MarkdownContent';
 import { getTutorialBySlug } from '@/lib/tutorials';
 
@@ -29,18 +29,34 @@ export default async function TutorialPage({ params }) {
         notFound();
     }
 
+    // Check if tutorial has media (new format) or videoId (old format for backward compatibility)
+    const hasMedia = tutorial.media && tutorial.media.length > 0;
+    const hasLegacyVideo = !hasMedia && tutorial.videoId;
+
     return (
         <article>
             <h1>{tutorial.title}</h1>
 
-            {tutorial.videoId && (
-                <>
-                    <h2>Video Tutorial</h2>
-                    <YouTubeEmbed videoId={tutorial.videoId} title={tutorial.title} />
-                </>
+            {/* New format: multiple media items */}
+            {hasMedia && (
+                <MediaGallery media={tutorial.media} tutorialTitle={tutorial.title} />
+            )}
+
+            {/* Legacy format: single video (backward compatibility) */}
+            {hasLegacyVideo && (
+                <MediaGallery
+                    media={[{
+                        id: 'legacy-video',
+                        type: 'video',
+                        videoId: tutorial.videoId,
+                        title: 'Video Tutorial'
+                    }]}
+                    tutorialTitle={tutorial.title}
+                />
             )}
 
             <MarkdownContent content={tutorial.content} />
         </article>
     );
 }
+

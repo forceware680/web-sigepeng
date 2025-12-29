@@ -1,0 +1,19 @@
+[
+  {
+    "id": "category-default",
+    "name": "Persediaan",
+    "slug": "Pengeluaran",
+    "icon": "BookOpen",
+    "order": 1,
+    "createdAt": "2024-12-29T00:00:00.000Z",
+    "updatedAt": "2025-12-29T07:07:05.373Z"
+  },
+  {
+    "id": "category-1766993547643",
+    "name": "Aset Tetap",
+    "slug": "AT",
+    "icon": "BookOpen",
+    "order": 1,
+    "createdAt": "2025-12-29T07:32:27.643Z"
+  }
+]
