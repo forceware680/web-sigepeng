@@ -75,7 +75,7 @@ export default function Sidebar() {
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
-                <h1>📚 Tutorial</h1>
+                <Link href="/"><h1>📚 SIMASET WIKI</h1></Link>
             </div>
             <div className="sidebar-search">
                 <SearchBar />
