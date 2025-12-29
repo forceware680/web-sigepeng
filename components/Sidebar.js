@@ -43,7 +43,7 @@ export default function Sidebar() {
             </nav>
             <div className="sidebar-footer">
                 <Link href="/admin/login" className="admin-link">🔐 Admin</Link>
-                <p>© 2024 Tutorial Website</p>
+                <p>© 2025 Tutorial SIMASET</p>
             </div>
         </aside>
     );
