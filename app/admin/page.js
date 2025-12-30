@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 
 export default function AdminDashboard() {
     const { data: session, status } = useSession();
@@ -11,6 +12,8 @@ export default function AdminDashboard() {
     const [tutorials, setTutorials] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -32,6 +35,7 @@ export default function AdminDashboard() {
             const catData = await catRes.json();
             setTutorials(Array.isArray(tutData) ? tutData : []);
             setCategories(Array.isArray(catData) ? catData : []);
+            setSelectedIds([]); // Reset selection after refresh
         } catch (error) {
             console.error('Failed to fetch data:', error);
         } finally {
@@ -58,6 +62,30 @@ export default function AdminDashboard() {
         return '-';
     };
 
+    // Handle select all checkbox
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(tutorials.map(t => t.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    // Handle individual checkbox
+    const handleSelectOne = (id) => {
+        setSelectedIds(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(i => i !== id);
+            } else {
+                return [...prev, id];
+            }
+        });
+    };
+
+    // Check if all are selected
+    const isAllSelected = tutorials.length > 0 && selectedIds.length === tutorials.length;
+    const isSomeSelected = selectedIds.length > 0 && selectedIds.length < tutorials.length;
+
     const handleDelete = async (id) => {
         if (!confirm('Yakin ingin menghapus tutorial ini?')) return;
 
@@ -66,6 +94,29 @@ export default function AdminDashboard() {
             fetchData();
         } catch (error) {
             console.error('Failed to delete:', error);
+        }
+    };
+
+    // Bulk delete handler
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+
+        const count = selectedIds.length;
+        if (!confirm(`Yakin ingin menghapus ${count} tutorial yang dipilih?`)) return;
+
+        setDeleting(true);
+        try {
+            // Delete all selected tutorials
+            await Promise.all(
+                selectedIds.map(id =>
+                    fetch(`/api/tutorials/${id}`, { method: 'DELETE' })
+                )
+            );
+            fetchData();
+        } catch (error) {
+            console.error('Failed to bulk delete:', error);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -97,12 +148,38 @@ export default function AdminDashboard() {
                 <Link href="/admin/categories" className="btn-secondary">
                     📁 Kelola Kategori
                 </Link>
+
+                {/* Bulk Delete Button */}
+                {selectedIds.length > 0 && (
+                    <button
+                        onClick={handleBulkDelete}
+                        className="btn-bulk-delete"
+                        disabled={deleting}
+                    >
+                        <Trash2 size={16} />
+                        {deleting
+                            ? 'Menghapus...'
+                            : `Hapus ${selectedIds.length} Tutorial`
+                        }
+                    </button>
+                )}
             </div>
 
             <div className="admin-table-container">
                 <table className="admin-table">
                     <thead>
                         <tr>
+                            <th className="checkbox-col">
+                                <input
+                                    type="checkbox"
+                                    checked={isAllSelected}
+                                    ref={el => {
+                                        if (el) el.indeterminate = isSomeSelected;
+                                    }}
+                                    onChange={handleSelectAll}
+                                    title="Pilih Semua"
+                                />
+                            </th>
                             <th>No</th>
                             <th>Judul</th>
                             <th>Kategori</th>
@@ -112,7 +189,17 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody>
                         {tutorials.map((tutorial, index) => (
-                            <tr key={tutorial.id}>
+                            <tr
+                                key={tutorial.id}
+                                className={selectedIds.includes(tutorial.id) ? 'selected' : ''}
+                            >
+                                <td className="checkbox-col">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.includes(tutorial.id)}
+                                        onChange={() => handleSelectOne(tutorial.id)}
+                                    />
+                                </td>
                                 <td>{index + 1}</td>
                                 <td>{tutorial.title}</td>
                                 <td>{getCategoryName(tutorial.categoryId)}</td>

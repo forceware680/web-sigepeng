@@ -1,5 +1,6 @@
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
+import Providers from '@/components/Providers';
 
 export const metadata = {
   title: {
@@ -21,12 +22,14 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <div className="app-container">
-          <Sidebar />
-          <main className="main-content">
-            {children}
-          </main>
-        </div>
+        <Providers>
+          <div className="app-container">
+            <Sidebar />
+            <main className="main-content">
+              {children}
+            </main>
+          </div>
+        </Providers>
       </body>
     </html>
   );

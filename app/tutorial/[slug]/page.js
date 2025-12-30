@@ -2,6 +2,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import MediaGallery from '@/components/MediaGallery';
 import MarkdownContent from '@/components/MarkdownContent';
+import LatestPosts from '@/components/LatestPosts';
+import PopularPosts from '@/components/PopularPosts';
+import PostActions from '@/components/PostActions';
+import ViewCounter from '@/components/ViewCounter';
 import { getTutorialBySlug, getRelatedTutorials } from '@/lib/tutorials';
 import { readCategories } from '@/lib/categories';
 
@@ -54,75 +58,94 @@ export default async function TutorialPage({ params }) {
     const categories = await readCategories();
 
     return (
-        <article>
-            <h1>{tutorial.title}</h1>
+        <div className="tutorial-layout">
+            {/* Main Article */}
+            <article className="tutorial-main">
+                <h1>{tutorial.title}</h1>
 
-            {/* Author and Date Info */}
-            <div className="tutorial-meta">
-                <span className="tutorial-author">
-                    👤 Ditulis oleh <strong>{tutorial.author || 'Admin'}</strong>
-                </span>
-                {createdDate && (
-                    <span className="tutorial-date">
-                        📅 {createdDate}
-                    </span>
-                )}
-                {updatedDate && updatedDate !== createdDate && (
-                    <span className="tutorial-updated">
-                        ✏️ Diperbarui: {updatedDate}
-                    </span>
-                )}
-            </div>
-
-            {/* New format: multiple media items */}
-            {hasMedia && (
-                <MediaGallery media={tutorial.media} tutorialTitle={tutorial.title} />
-            )}
-
-            {/* Legacy format: single video (backward compatibility) */}
-            {hasLegacyVideo && (
-                <MediaGallery
-                    media={[{
-                        id: 'legacy-video',
-                        type: 'video',
-                        videoId: tutorial.videoId,
-                        title: 'Video Tutorial'
-                    }]}
-                    tutorialTitle={tutorial.title}
-                />
-            )}
-
-            <MarkdownContent content={tutorial.content} />
-
-            {/* Related Tutorials Section */}
-            {relatedTutorials.length > 0 && (
-                <section className="related-tutorials">
-                    <h2>📚 Tutorial Lainnya</h2>
-                    <div className="related-grid">
-                        {relatedTutorials.map(related => {
-                            const category = categories.find(c => c.id === related.categoryId);
-                            return (
-                                <Link
-                                    key={related.id}
-                                    href={`/tutorial/${related.slug}`}
-                                    className="related-card"
-                                >
-                                    <div className="related-card-content">
-                                        <h3>{related.title}</h3>
-                                        {category && (
-                                            <span className="related-category">{category.name}</span>
-                                        )}
-                                        <p className="related-excerpt">
-                                            {related.content?.substring(0, 100).replace(/[#*`>\[\]]/g, '')}...
-                                        </p>
-                                    </div>
-                                    <span className="related-arrow">→</span>
-                                </Link>
-                            );
-                        })}
+                {/* Author, Date, and Actions */}
+                <div className="tutorial-header-row">
+                    <div className="tutorial-meta">
+                        <span className="tutorial-author">
+                            👤 Ditulis oleh <strong>{tutorial.author || 'Admin'}</strong>
+                        </span>
+                        {createdDate && (
+                            <span className="tutorial-date">
+                                📅 {createdDate}
+                            </span>
+                        )}
+                        {updatedDate && updatedDate !== createdDate && (
+                            <span className="tutorial-updated">
+                                ✏️ Diperbarui: {updatedDate}
+                            </span>
+                        )}
+                        <ViewCounter slug={slug} initialViews={tutorial.views || 0} />
                     </div>
-                </section>
-            )}
-        </article>
+
+                    {/* WhatsApp Share & Admin Edit Buttons */}
+                    <PostActions
+                        tutorialId={tutorial.id}
+                        tutorialTitle={tutorial.title}
+                        tutorialSlug={tutorial.slug}
+                    />
+                </div>
+
+                {/* New format: multiple media items */}
+                {hasMedia && (
+                    <MediaGallery media={tutorial.media} tutorialTitle={tutorial.title} />
+                )}
+
+                {/* Legacy format: single video (backward compatibility) */}
+                {hasLegacyVideo && (
+                    <MediaGallery
+                        media={[{
+                            id: 'legacy-video',
+                            type: 'video',
+                            videoId: tutorial.videoId,
+                            title: 'Video Tutorial'
+                        }]}
+                        tutorialTitle={tutorial.title}
+                    />
+                )}
+
+                <MarkdownContent content={tutorial.content} />
+
+                {/* Related Tutorials Section */}
+                {relatedTutorials.length > 0 && (
+                    <section className="related-tutorials">
+                        <h2>📚 Tutorial Lainnya</h2>
+                        <div className="related-grid">
+                            {relatedTutorials.map(related => {
+                                const category = categories.find(c => c.id === related.categoryId);
+                                return (
+                                    <Link
+                                        key={related.id}
+                                        href={`/tutorial/${related.slug}`}
+                                        className="related-card"
+                                    >
+                                        <div className="related-card-content">
+                                            <h3>{related.title}</h3>
+                                            {category && (
+                                                <span className="related-category">{category.name}</span>
+                                            )}
+                                            <p className="related-excerpt">
+                                                {related.content?.substring(0, 100).replace(/[#*`>\[\]]/g, '')}...
+                                            </p>
+                                        </div>
+                                        <span className="related-arrow">→</span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </section>
+                )}
+            </article>
+
+            {/* Sidebar - Widgets */}
+            <aside className="tutorial-sidebar">
+                <LatestPosts currentSlug={slug} limit={5} />
+                <PopularPosts limit={5} />
+            </aside>
+        </div>
     );
 }

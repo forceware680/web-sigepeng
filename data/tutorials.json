@@ -16,6 +16,20 @@
         "caption": ""
       }
     ],
-    "updatedAt": "2025-12-29T07:09:38.643Z"
+    "updatedAt": "2025-12-29T07:09:38.643Z",
+    "views": 1
+  },
+  {
+    "id": "tutorial-1767080280743",
+    "title": "Tutorial Cek Penerimaan Menggunakan Sigepeng",
+    "slug": "l",
+    "categoryId": "category-1767064539559",
+    "content": "Loremipsum",
+    "media": [],
+    "order": 1,
+    "author": "Administrator",
+    "createdAt": "2025-12-30T07:38:00.743Z",
+    "updatedAt": "2025-12-30T07:45:36.268Z",
+    "views": 1
   }
 ]
