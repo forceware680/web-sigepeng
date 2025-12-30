@@ -22,14 +22,18 @@ export default function CreateTutorial() {
     const [media, setMedia] = useState([]);
 
     useEffect(() => {
+        // Only redirect after loading is complete
+        if (status === 'loading') return;
         if (status === 'unauthenticated') {
             router.push('/admin/login');
         }
     }, [status, router]);
 
     useEffect(() => {
-        fetchCategories();
-    }, []);
+        if (status === 'authenticated') {
+            fetchCategories();
+        }
+    }, [status]);
 
     const fetchCategories = async () => {
         try {

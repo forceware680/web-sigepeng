@@ -16,14 +16,19 @@ export default function AdminDashboard() {
     const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
+        // Only redirect after loading is complete and confirmed unauthenticated
+        if (status === 'loading') return;
         if (status === 'unauthenticated') {
             router.push('/admin/login');
         }
     }, [status, router]);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        // Only fetch data when we have a valid session
+        if (status === 'authenticated') {
+            fetchData();
+        }
+    }, [status]);
 
     const fetchData = async () => {
         try {
