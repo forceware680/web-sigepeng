@@ -5,7 +5,17 @@ import { readTutorials, writeTutorials } from '@/lib/tutorials';
 export async function POST(request, { params }) {
     try {
         const { id } = await params;
-        const tutorials = await readTutorials();
+
+        // Read current data
+        let tutorials;
+        try {
+            tutorials = await readTutorials();
+        } catch (readError) {
+            console.error('Failed to read tutorials for view increment:', readError);
+            // Return error but don't corrupt data
+            return NextResponse.json({ error: 'Read failed', views: 0 }, { status: 500 });
+        }
+
         const index = tutorials.findIndex(t => t.id === id || t.slug === id);
 
         if (index === -1) {
@@ -15,7 +25,16 @@ export async function POST(request, { params }) {
         // Increment view count
         tutorials[index].views = (tutorials[index].views || 0) + 1;
 
-        await writeTutorials(tutorials);
+        try {
+            await writeTutorials(tutorials);
+        } catch (writeError) {
+            console.error('Failed to write tutorials after view increment:', writeError);
+            // Return the incremented count but note the write failed
+            return NextResponse.json({
+                views: tutorials[index].views,
+                warning: 'View counted but save may have failed'
+            });
+        }
 
         return NextResponse.json({
             views: tutorials[index].views
