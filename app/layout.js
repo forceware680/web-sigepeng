@@ -2,8 +2,14 @@ import './globals.css';
 import Sidebar from '@/components/Sidebar';
 
 export const metadata = {
-  title: 'Tutorial Website',
-  description: 'Website tutorial dengan video embed dari YouTube',
+  title: {
+    default: 'SIMASET WIKI',
+    template: '%s - SIMASET WIKI'
+  },
+  description: 'Panduan lengkap penggunaan Sistem Informasi Manajemen Aset',
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }) {

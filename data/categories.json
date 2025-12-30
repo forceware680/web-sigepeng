@@ -15,5 +15,23 @@
     "icon": "BookOpen",
     "order": 1,
     "createdAt": "2025-12-29T07:32:27.643Z"
+  },
+  {
+    "id": "category-1767064466054",
+    "name": "Modul Utama",
+    "slug": "modul-utama",
+    "icon": "Folder",
+    "order": 1,
+    "parentId": null,
+    "createdAt": "2025-12-30T03:14:26.054Z"
+  },
+  {
+    "id": "category-1767064539559",
+    "name": "Sub Modul 1",
+    "slug": "sub-modul-1",
+    "icon": "Folder",
+    "order": 1,
+    "parentId": "category-1767064466054",
+    "createdAt": "2025-12-30T03:15:39.559Z"
   }
 ]

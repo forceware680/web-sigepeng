@@ -110,11 +110,16 @@ export default function SearchBar() {
                                 </div>
                                 <div className="search-result-meta">
                                     {result.type === 'category' ? (
-                                        <span className="result-type-badge category">Kategori</span>
+                                        <>
+                                            <span className="result-type-badge category">Kategori</span>
+                                            {result.categoryPath && result.categoryPath !== result.title && (
+                                                <span className="result-category">{result.categoryPath}</span>
+                                            )}
+                                        </>
                                     ) : (
                                         <>
                                             <span className="result-type-badge tutorial">Tutorial</span>
-                                            <span className="result-category">{result.categoryName}</span>
+                                            <span className="result-category">{result.categoryPath}</span>
                                         </>
                                     )}
                                     <span className="result-match">• {result.matchedIn}</span>

@@ -8,7 +8,7 @@ import * as LucideIcons from 'lucide-react';
 
 // Available icons for category selection
 const AVAILABLE_ICONS = [
-    'BookOpen', 'Folder', 'FileText', 'Video', 'Image', 'Settings',
+    'BookOpen', 'Folder', 'FolderOpen', 'FileText', 'Video', 'Image', 'Settings',
     'Download', 'Upload', 'Database', 'Users', 'ShoppingCart', 'Package',
     'Clipboard', 'Archive', 'Calendar', 'Clock', 'Star', 'Heart',
     'CheckCircle', 'AlertCircle', 'Info', 'HelpCircle', 'Search', 'Filter'
@@ -23,6 +23,7 @@ export default function CategoriesPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [categories, setCategories] = useState([]);
+    const [categoryTree, setCategoryTree] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -30,8 +31,10 @@ export default function CategoriesPage() {
         name: '',
         slug: '',
         icon: 'Folder',
-        order: 1
+        order: 1,
+        parentId: ''
     });
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -45,9 +48,14 @@ export default function CategoriesPage() {
 
     const fetchCategories = async () => {
         try {
-            const res = await fetch('/api/categories');
-            const data = await res.json();
-            setCategories(Array.isArray(data) ? data : []);
+            const [flatRes, treeRes] = await Promise.all([
+                fetch('/api/categories'),
+                fetch('/api/categories?tree=true')
+            ]);
+            const flatData = await flatRes.json();
+            const treeData = await treeRes.json();
+            setCategories(Array.isArray(flatData) ? flatData : []);
+            setCategoryTree(Array.isArray(treeData) ? treeData : []);
         } catch (error) {
             console.error('Failed to fetch categories:', error);
         } finally {
@@ -68,26 +76,41 @@ export default function CategoriesPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
         try {
+            const payload = {
+                ...formData,
+                parentId: formData.parentId || null,
+                order: parseInt(formData.order) || 1
+            };
+
+            let response;
             if (editingId) {
-                await fetch(`/api/categories/${editingId}`, {
+                response = await fetch(`/api/categories/${editingId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(payload)
                 });
             } else {
-                await fetch('/api/categories', {
+                response = await fetch('/api/categories', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(payload)
                 });
+            }
+
+            if (!response.ok) {
+                const data = await response.json();
+                setError(data.error || 'Gagal menyimpan kategori');
+                return;
             }
 
             resetForm();
             fetchCategories();
         } catch (error) {
             console.error('Failed to save category:', error);
+            setError('Terjadi kesalahan saat menyimpan');
         }
     };
 
@@ -97,16 +120,23 @@ export default function CategoriesPage() {
             name: category.name,
             slug: category.slug,
             icon: category.icon || 'Folder',
-            order: category.order || 1
+            order: category.order || 1,
+            parentId: category.parentId || ''
         });
         setShowForm(true);
+        setError('');
     };
 
     const handleDelete = async (id) => {
         if (!confirm('Yakin ingin menghapus kategori ini?')) return;
 
         try {
-            await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+            if (!response.ok) {
+                const data = await response.json();
+                alert(data.error || 'Gagal menghapus kategori');
+                return;
+            }
             fetchCategories();
         } catch (error) {
             console.error('Failed to delete:', error);
@@ -116,8 +146,44 @@ export default function CategoriesPage() {
     const resetForm = () => {
         setShowForm(false);
         setEditingId(null);
-        setFormData({ name: '', slug: '', icon: 'Folder', order: 1 });
+        setFormData({ name: '', slug: '', icon: 'Folder', order: 1, parentId: '' });
+        setError('');
     };
+
+    // Build options for parent selector with indentation
+    const buildParentOptions = (nodes, depth = 0, excludeId = null) => {
+        const options = [];
+        nodes.forEach(node => {
+            // Don't show the current editing category or its descendants as parent options
+            if (node.id === excludeId) return;
+
+            const prefix = '—'.repeat(depth);
+            options.push({
+                id: node.id,
+                label: depth > 0 ? `${prefix} ${node.name}` : node.name
+            });
+
+            if (node.children && node.children.length > 0) {
+                options.push(...buildParentOptions(node.children, depth + 1, excludeId));
+            }
+        });
+        return options;
+    };
+
+    // Build flat list with hierarchy info for table display
+    const buildFlatListWithDepth = (nodes, depth = 0) => {
+        const list = [];
+        nodes.forEach(node => {
+            list.push({ ...node, depth });
+            if (node.children && node.children.length > 0) {
+                list.push(...buildFlatListWithDepth(node.children, depth + 1));
+            }
+        });
+        return list;
+    };
+
+    const parentOptions = buildParentOptions(categoryTree, 0, editingId);
+    const flatCategoriesWithDepth = buildFlatListWithDepth(categoryTree);
 
     if (status === 'loading' || loading) {
         return <div className="admin-loading">Loading...</div>;
@@ -132,7 +198,7 @@ export default function CategoriesPage() {
             <header className="admin-header">
                 <div className="admin-header-left">
                     <h1>📁 Manajemen Kategori</h1>
-                    <p>Kelola kategori untuk menu tutorial</p>
+                    <p>Kelola kategori dan subkategori untuk menu tutorial</p>
                 </div>
                 <div className="admin-header-right">
                     <Link href="/admin" className="btn-secondary">← Kembali</Link>
@@ -152,6 +218,36 @@ export default function CategoriesPage() {
                 <div className="form-overlay">
                     <form onSubmit={handleSubmit} className="category-form">
                         <h2>{editingId ? '✏️ Edit Kategori' : '➕ Tambah Kategori Baru'}</h2>
+
+                        {error && (
+                            <div className="form-error" style={{
+                                color: '#ff6b6b',
+                                background: 'rgba(255,107,107,0.1)',
+                                padding: '10px',
+                                borderRadius: '6px',
+                                marginBottom: '15px'
+                            }}>
+                                ⚠️ {error}
+                            </div>
+                        )}
+
+                        <div className="form-group">
+                            <label htmlFor="parentId">Parent Kategori</label>
+                            <select
+                                id="parentId"
+                                name="parentId"
+                                value={formData.parentId}
+                                onChange={handleChange}
+                            >
+                                <option value="">— Tidak Ada (Root) —</option>
+                                {parentOptions.map(opt => (
+                                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                                ))}
+                            </select>
+                            <small style={{ color: '#888', fontSize: '12px' }}>
+                                Kosongkan untuk kategori utama (level 1)
+                            </small>
+                        </div>
 
                         <div className="form-group">
                             <label htmlFor="name">Nama Kategori *</label>
@@ -234,12 +330,24 @@ export default function CategoriesPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {categories.map((category) => (
+                        {flatCategoriesWithDepth.map((category) => (
                             <tr key={category.id}>
                                 <td className="icon-cell">
                                     {getIcon(category.icon, { size: 20 })}
                                 </td>
-                                <td>{category.name}</td>
+                                <td>
+                                    <span style={{
+                                        marginLeft: `${category.depth * 20}px`,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        {category.depth > 0 && (
+                                            <span style={{ color: '#666', fontSize: '12px' }}>↳</span>
+                                        )}
+                                        {category.name}
+                                    </span>
+                                </td>
                                 <td><code>{category.slug}</code></td>
                                 <td>{category.order}</td>
                                 <td className="action-buttons">

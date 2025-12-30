@@ -1,6 +1,20 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 export default function Home() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div className="welcome-container">
       <div className="welcome-icon">🎓</div>
@@ -9,10 +23,15 @@ export default function Home() {
         Panduan lengkap penggunaan Sistem Informasi Manajemen Aset
       </p>
       <div className="welcome-card">
-        <div className="welcome-card-icon">👈</div>
+        <div className="welcome-card-icon">{isMobile ? '☰' : '👈'}</div>
         <div className="welcome-card-content">
           <h3>Mulai Belajar</h3>
-          <p>Klik menu di samping kiri untuk mengakses tutorial yang tersedia</p>
+          <p>
+            {isMobile
+              ? 'Klik menu hamburger (☰) di atas untuk mengakses tutorial'
+              : 'Klik menu di samping kiri untuk mengakses tutorial yang tersedia'
+            }
+          </p>
         </div>
       </div>
       <div className="welcome-features">

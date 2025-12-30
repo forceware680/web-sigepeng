@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readCategories, writeCategories } from '@/lib/categories';
+import { readCategories, writeCategories, getDescendantIds } from '@/lib/categories';
 
 // GET single category
 export async function GET(request, { params }) {
@@ -31,12 +31,21 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ error: 'Category not found' }, { status: 404 });
         }
 
+        // Prevent circular reference
+        if (body.parentId) {
+            const descendantIds = await getDescendantIds(id);
+            if (body.parentId === id || descendantIds.includes(body.parentId)) {
+                return NextResponse.json({ error: 'Cannot set parent to self or descendant' }, { status: 400 });
+            }
+        }
+
         categories[index] = {
             ...categories[index],
             name: body.name ?? categories[index].name,
             slug: body.slug ?? categories[index].slug,
             icon: body.icon ?? categories[index].icon,
             order: body.order ?? categories[index].order,
+            parentId: body.parentId !== undefined ? (body.parentId || null) : categories[index].parentId,
             updatedAt: new Date().toISOString()
         };
 
@@ -58,6 +67,14 @@ export async function DELETE(request, { params }) {
         const index = categories.findIndex(c => c.id === id);
         if (index === -1) {
             return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+        }
+
+        // Check if category has children
+        const hasChildren = categories.some(c => c.parentId === id);
+        if (hasChildren) {
+            return NextResponse.json({
+                error: 'Cannot delete category with subcategories. Delete children first.'
+            }, { status: 400 });
         }
 
         categories.splice(index, 1);

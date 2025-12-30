@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readTutorials } from '@/lib/tutorials';
-import { readCategories } from '@/lib/categories';
+import { readCategories, getCategoryPath } from '@/lib/categories';
 
 // GET search results
 export async function GET(request) {
@@ -20,23 +20,29 @@ export async function GET(request) {
         const results = [];
 
         // Search in categories
-        categories.forEach(category => {
+        for (const category of categories) {
             if (category.name.toLowerCase().includes(query) ||
                 category.slug.toLowerCase().includes(query)) {
+
+                // Get full path for this category
+                const path = await getCategoryPath(category.id);
+                const pathString = path.map(p => p.name).join(' > ');
+
                 results.push({
                     type: 'category',
                     id: category.id,
                     title: category.name,
                     slug: category.slug,
                     icon: category.icon,
-                    url: null, // Categories don't have direct URL
+                    url: null,
+                    categoryPath: pathString,
                     matchedIn: 'nama kategori'
                 });
             }
-        });
+        }
 
         // Search in tutorials
-        tutorials.forEach(tutorial => {
+        for (const tutorial of tutorials) {
             const matches = [];
 
             // Search in title
@@ -61,21 +67,27 @@ export async function GET(request) {
             }
 
             if (matches.length > 0) {
-                // Get category name
-                const category = categories.find(c => c.id === tutorial.categoryId);
+                // Get full category path
+                let categoryPath = 'Uncategorized';
+                if (tutorial.categoryId) {
+                    const path = await getCategoryPath(tutorial.categoryId);
+                    if (path.length > 0) {
+                        categoryPath = path.map(p => p.name).join(' > ');
+                    }
+                }
 
                 results.push({
                     type: 'tutorial',
                     id: tutorial.id,
                     title: tutorial.title,
                     slug: tutorial.slug,
-                    categoryName: category?.name || 'Uncategorized',
+                    categoryPath: categoryPath,
                     url: `/tutorial/${tutorial.slug}`,
                     matchedIn: matches.join(', '),
                     excerpt: getExcerpt(tutorial.content, query)
                 });
             }
-        });
+        }
 
         return NextResponse.json({
             results,

@@ -238,6 +238,7 @@ body {
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -301,8 +302,13 @@ body {
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
-  padding: 2rem 3rem;
-  max-width: 900px;
+  padding: 2rem 4rem;
+  min-height: 100vh;
+}
+
+.main-content-inner {
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .main-content h1 {
@@ -402,9 +408,11 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 70vh;
+  min-height: calc(100vh - 4rem);
   text-align: center;
   padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .welcome-icon {
@@ -628,6 +636,37 @@ body {
   opacity: 0.6;
 }
 
+/* Nested Subcategories Wrapper */
+.submenu-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.submenu-wrapper.expanded {
+  max-height: 2000px;
+  transition: max-height 0.5s ease-in;
+}
+
+.subcategories {
+  border-left: 1px solid var(--border-color);
+  margin-left: 1.25rem;
+}
+
+.subcategories .category-header {
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+}
+
+.subcategories .category-icon {
+  opacity: 0.8;
+}
+
+.subcategories .submenu a {
+  padding-left: 2.5rem;
+  font-size: 0.8rem;
+}
+
 .sidebar-loading {
   padding: 1.5rem;
   color: var(--text-secondary);
@@ -698,28 +737,200 @@ body {
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    position: relative;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding: 1.5rem;
+  :root {
+    --sidebar-width: 280px;
   }
 
   .app-container {
     flex-direction: column;
   }
 
+  /* Mobile Header with Hamburger */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .mobile-header h1 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.2s;
+  }
+
+  .hamburger-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* Sidebar as Overlay */
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: 85%;
+    max-width: 320px;
+    height: 100vh;
+    z-index: 200;
+    transition: left 0.3s ease;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 150;
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+
+  .sidebar-close:hover {
+    background: #ff4757;
+    color: white;
+  }
+
+  /* Main Content - Full Width */
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* Welcome adjustments */
+  .welcome-container {
+    min-height: calc(100vh - 120px);
+    padding: 1.5rem 1rem;
+  }
+
+  .welcome-container h1 {
+    font-size: 1.75rem;
+  }
+
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+
+  .welcome-card {
+    padding: 1rem 1.25rem;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .welcome-card-content {
+    text-align: center;
+  }
+
+  .welcome-features {
+    gap: 0.75rem;
+  }
+
+  .feature-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  /* Video responsive */
+  .video-container {
+    margin: 1rem 0;
+    border-radius: 8px;
+  }
+
+  /* Tutorial content */
+  .main-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .main-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  /* Submenu adjustments */
   .submenu a {
-    padding-left: 2.5rem;
+    padding: 0.6rem 1.25rem 0.6rem 2.5rem;
+    font-size: 0.9rem;
   }
 
   .category-header {
-    padding: 0.6rem 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Search on mobile */
+  .search-results {
+    max-height: 60vh;
+  }
+
+  /* Hide desktop elements on mobile */
+  .sidebar-footer .admin-link {
+    display: block;
+  }
+}
+
+/* Desktop - hide mobile-only elements */
+@media (min-width: 769px) {
+  .mobile-header {
+    display: none;
+  }
+
+  .sidebar-overlay {
+    display: none !important;
+  }
+
+  .sidebar-close {
+    display: none;
   }
 }

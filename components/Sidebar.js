@@ -14,38 +14,61 @@ function getIcon(iconName, props = {}) {
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const [categories, setCategories] = useState([]);
+    const [categoryTree, setCategoryTree] = useState([]);
     const [tutorials, setTutorials] = useState([]);
-    const [expandedCategories, setExpandedCategories] = useState({});
+    const [expandedNodes, setExpandedNodes] = useState({});
     const [loading, setLoading] = useState(true);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
     }, []);
 
-    // Auto-expand category that contains active tutorial
+    // Close sidebar when navigating on mobile
     useEffect(() => {
-        if (pathname.startsWith('/tutorial/')) {
+        setIsMobileOpen(false);
+    }, [pathname]);
+
+    // Auto-expand path to active tutorial
+    useEffect(() => {
+        if (pathname.startsWith('/tutorial/') && categoryTree.length > 0) {
             const currentSlug = pathname.split('/tutorial/')[1];
             const currentTutorial = tutorials.find(t => t.slug === currentSlug);
             if (currentTutorial && currentTutorial.categoryId) {
-                setExpandedCategories(prev => ({
-                    ...prev,
-                    [currentTutorial.categoryId]: true
-                }));
+                const expandPath = (nodes, targetId, path = []) => {
+                    for (const node of nodes) {
+                        if (node.id === targetId) {
+                            return [...path, node.id];
+                        }
+                        if (node.children && node.children.length > 0) {
+                            const found = expandPath(node.children, targetId, [...path, node.id]);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                };
+
+                const pathToExpand = expandPath(categoryTree, currentTutorial.categoryId);
+                if (pathToExpand) {
+                    setExpandedNodes(prev => {
+                        const newExpanded = { ...prev };
+                        pathToExpand.forEach(id => newExpanded[id] = true);
+                        return newExpanded;
+                    });
+                }
             }
         }
-    }, [pathname, tutorials]);
+    }, [pathname, tutorials, categoryTree]);
 
     const fetchData = async () => {
         try {
             const [catRes, tutRes] = await Promise.all([
-                fetch('/api/categories'),
+                fetch('/api/categories?tree=true'),
                 fetch('/api/tutorials')
             ]);
             const catData = await catRes.json();
             const tutData = await tutRes.json();
-            setCategories(Array.isArray(catData) ? catData : []);
+            setCategoryTree(Array.isArray(catData) ? catData : []);
             setTutorials(Array.isArray(tutData) ? tutData : []);
         } catch (error) {
             console.error('Failed to fetch data:', error);
@@ -54,10 +77,10 @@ export default function Sidebar() {
         }
     };
 
-    const toggleCategory = (categoryId) => {
-        setExpandedCategories(prev => ({
+    const toggleNode = (nodeId) => {
+        setExpandedNodes(prev => ({
             ...prev,
-            [categoryId]: !prev[categoryId]
+            [nodeId]: !prev[nodeId]
         }));
     };
 
@@ -67,49 +90,161 @@ export default function Sidebar() {
             .sort((a, b) => a.order - b.order);
     };
 
-    // Get tutorials without a category
+    // Recursive component for rendering category tree
+    const CategoryNode = ({ category, depth = 0 }) => {
+        const categoryTutorials = getTutorialsByCategory(category.id);
+        const hasChildren = category.children && category.children.length > 0;
+        const hasTutorials = categoryTutorials.length > 0;
+        const isExpanded = expandedNodes[category.id];
+        const hasActiveTutorial = categoryTutorials.some(
+            t => pathname === `/tutorial/${t.slug}`
+        );
+
+        const hasActiveDescendant = (node) => {
+            const nodeTutorials = getTutorialsByCategory(node.id);
+            if (nodeTutorials.some(t => pathname === `/tutorial/${t.slug}`)) return true;
+            if (node.children) {
+                return node.children.some(child => hasActiveDescendant(child));
+            }
+            return false;
+        };
+
+        return (
+            <div className="menu-category" style={{ marginLeft: depth > 0 ? '12px' : '0' }}>
+                <button
+                    className={`category-header ${hasActiveTutorial || hasActiveDescendant(category) ? 'has-active' : ''}`}
+                    onClick={() => toggleNode(category.id)}
+                    aria-expanded={isExpanded}
+                    style={{ paddingLeft: depth > 0 ? '8px' : '12px' }}
+                >
+                    <span className="category-icon">
+                        {getIcon(category.icon, { size: 18 - Math.min(depth * 2, 4) })}
+                    </span>
+                    <span className="category-name">{category.name}</span>
+                    {(hasChildren || hasTutorials) && (
+                        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>
+                            {getIcon('ChevronRight', { size: 16 })}
+                        </span>
+                    )}
+                </button>
+
+                <div className={`submenu-wrapper ${isExpanded ? 'expanded' : ''}`}>
+                    {hasChildren && isExpanded && (
+                        <div className="subcategories">
+                            {category.children.map(child => (
+                                <CategoryNode
+                                    key={child.id}
+                                    category={child}
+                                    depth={depth + 1}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {hasTutorials && isExpanded && (
+                        <ul className="submenu expanded">
+                            {categoryTutorials.map(tutorial => (
+                                <li key={tutorial.id}>
+                                    <Link
+                                        href={`/tutorial/${tutorial.slug}`}
+                                        className={pathname === `/tutorial/${tutorial.slug}` ? 'active' : ''}
+                                    >
+                                        {tutorial.title}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    {!hasChildren && !hasTutorials && isExpanded && (
+                        <div className="empty-category" style={{ marginLeft: '24px', fontSize: '12px', opacity: 0.6 }}>
+                            Belum ada konten
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const getAllCategoryIds = (nodes) => {
+        const ids = [];
+        nodes.forEach(node => {
+            ids.push(node.id);
+            if (node.children) {
+                ids.push(...getAllCategoryIds(node.children));
+            }
+        });
+        return ids;
+    };
+
+    const allCategoryIds = getAllCategoryIds(categoryTree);
     const uncategorizedTutorials = tutorials.filter(t =>
-        !t.categoryId || !categories.find(c => c.id === t.categoryId)
+        !t.categoryId || !allCategoryIds.includes(t.categoryId)
     );
 
     return (
-        <aside className="sidebar">
-            <div className="sidebar-header">
-                <Link href="/"><h1>📚 SIMASET WIKI</h1></Link>
+        <>
+            {/* Mobile Header */}
+            <div className="mobile-header">
+                <Link href="/" style={{ textDecoration: 'none' }}>
+                    <h1 style={{
+                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>
+                        📚 SIMASET WIKI
+                    </h1>
+                </Link>
+                <button
+                    className="hamburger-btn"
+                    onClick={() => setIsMobileOpen(true)}
+                    aria-label="Open menu"
+                >
+                    {getIcon('Menu', { size: 24 })}
+                </button>
             </div>
-            <div className="sidebar-search">
-                <SearchBar />
-            </div>
-            <nav className="sidebar-nav">
-                {loading ? (
-                    <div className="sidebar-loading">Memuat...</div>
-                ) : (
-                    <>
-                        {categories.map((category) => {
-                            const categoryTutorials = getTutorialsByCategory(category.id);
-                            const isExpanded = expandedCategories[category.id];
-                            const hasActiveTutorial = categoryTutorials.some(
-                                t => pathname === `/tutorial/${t.slug}`
-                            );
 
-                            return (
-                                <div key={category.id} className="menu-category">
-                                    <button
-                                        className={`category-header ${hasActiveTutorial ? 'has-active' : ''}`}
-                                        onClick={() => toggleCategory(category.id)}
-                                        aria-expanded={isExpanded}
-                                    >
+            {/* Overlay */}
+            <div
+                className={`sidebar-overlay ${isMobileOpen ? 'show' : ''}`}
+                onClick={() => setIsMobileOpen(false)}
+            />
+
+            {/* Sidebar */}
+            <aside className={`sidebar ${isMobileOpen ? 'open' : ''}`}>
+                <div className="sidebar-header">
+                    <Link href="/"><h1>📚 SIMASET WIKI</h1></Link>
+                    <button
+                        className="sidebar-close"
+                        onClick={() => setIsMobileOpen(false)}
+                        aria-label="Close menu"
+                    >
+                        {getIcon('X', { size: 20 })}
+                    </button>
+                </div>
+                <div className="sidebar-search">
+                    <SearchBar />
+                </div>
+                <nav className="sidebar-nav">
+                    {loading ? (
+                        <div className="sidebar-loading">Memuat...</div>
+                    ) : (
+                        <>
+                            {categoryTree.map(category => (
+                                <CategoryNode key={category.id} category={category} />
+                            ))}
+
+                            {uncategorizedTutorials.length > 0 && (
+                                <div className="menu-category">
+                                    <div className="category-header uncategorized">
                                         <span className="category-icon">
-                                            {getIcon(category.icon, { size: 18 })}
+                                            {getIcon('FileText', { size: 18 })}
                                         </span>
-                                        <span className="category-name">{category.name}</span>
-                                        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>
-                                            {getIcon('ChevronRight', { size: 16 })}
-                                        </span>
-                                    </button>
-
-                                    <ul className={`submenu ${isExpanded ? 'expanded' : ''}`}>
-                                        {categoryTutorials.map((tutorial) => (
+                                        <span className="category-name">Lainnya</span>
+                                    </div>
+                                    <ul className="submenu expanded">
+                                        {uncategorizedTutorials.map(tutorial => (
                                             <li key={tutorial.id}>
                                                 <Link
                                                     href={`/tutorial/${tutorial.slug}`}
@@ -119,51 +254,23 @@ export default function Sidebar() {
                                                 </Link>
                                             </li>
                                         ))}
-                                        {categoryTutorials.length === 0 && (
-                                            <li className="empty-category">Belum ada tutorial</li>
-                                        )}
                                     </ul>
                                 </div>
-                            );
-                        })}
+                            )}
 
-                        {/* Uncategorized tutorials */}
-                        {uncategorizedTutorials.length > 0 && (
-                            <div className="menu-category">
-                                <div className="category-header uncategorized">
-                                    <span className="category-icon">
-                                        {getIcon('FileText', { size: 18 })}
-                                    </span>
-                                    <span className="category-name">Lainnya</span>
+                            {categoryTree.length === 0 && uncategorizedTutorials.length === 0 && (
+                                <div className="empty-state">
+                                    <p>Belum ada tutorial</p>
                                 </div>
-                                <ul className="submenu expanded">
-                                    {uncategorizedTutorials.map((tutorial) => (
-                                        <li key={tutorial.id}>
-                                            <Link
-                                                href={`/tutorial/${tutorial.slug}`}
-                                                className={pathname === `/tutorial/${tutorial.slug}` ? 'active' : ''}
-                                            >
-                                                {tutorial.title}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                        {categories.length === 0 && uncategorizedTutorials.length === 0 && (
-                            <div className="empty-state">
-                                <p>Belum ada tutorial</p>
-                            </div>
-                        )}
-                    </>
-                )}
-            </nav>
-            <div className="sidebar-footer">
-                <Link href="/admin" className="admin-link">🔐 Admin</Link>
-                <p>© 2025 Tutorial SIMASET</p>
-            </div>
-        </aside>
+                            )}
+                        </>
+                    )}
+                </nav>
+                <div className="sidebar-footer">
+                    <Link href="/admin" className="admin-link">🔐 Admin</Link>
+                    <p>© 2025 Tutorial SIMASET</p>
+                </div>
+            </aside>
+        </>
     );
 }
-

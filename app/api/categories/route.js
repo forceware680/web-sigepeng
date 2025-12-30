@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import { readCategories, writeCategories } from '@/lib/categories';
+import { readCategories, writeCategories, getCategoryTree } from '@/lib/categories';
 
 // GET all categories
-export async function GET() {
+export async function GET(request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const tree = searchParams.get('tree') === 'true';
+
+        if (tree) {
+            const categoryTree = await getCategoryTree();
+            return NextResponse.json(categoryTree);
+        }
+
         const categories = await readCategories();
         const sortedCategories = categories.sort((a, b) => a.order - b.order);
         return NextResponse.json(sortedCategories);
@@ -25,6 +33,7 @@ export async function POST(request) {
             slug: body.slug || body.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
             icon: body.icon || 'Folder',
             order: body.order || categories.length + 1,
+            parentId: body.parentId || null,
             createdAt: new Date().toISOString()
         };
 
