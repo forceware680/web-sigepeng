@@ -90,7 +90,8 @@ export default function CreateTutorial() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    media: validMedia
+                    media: validMedia,
+                    author: session?.user?.name || 'Admin'
                 })
             });
 

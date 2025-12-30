@@ -126,6 +126,7 @@ export default function EditTutorial() {
                 body: JSON.stringify({
                     ...formData,
                     media: validMedia
+                    // author is preserved in API - original author is kept on edit
                 })
             });
 

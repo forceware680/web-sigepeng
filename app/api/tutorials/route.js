@@ -42,6 +42,7 @@ export async function POST(request) {
             content: body.content || '',
             media: media,
             order: body.order || tutorials.length + 1,
+            author: body.author || 'Admin',
             createdAt: new Date().toISOString()
         };
 

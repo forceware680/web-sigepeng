@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Code, Link, Video, Image, Eye, Edit } from 'lucide-react';
+import { Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Code, Link, Video, Image, Eye, Edit, Quote } from 'lucide-react';
 
 export default function BlogEditor({ value, onChange, placeholder = "Tulis konten tutorial..." }) {
     const [previewMode, setPreviewMode] = useState(false);
@@ -54,6 +54,7 @@ export default function BlogEditor({ value, onChange, placeholder = "Tulis konte
     const handleBulletList = () => insertAtNewLine('- ');
     const handleNumberList = () => insertAtNewLine('1. ');
     const handleCode = () => insertText('`', '`');
+    const handleQuote = () => insertAtNewLine('> ');
 
     const handleLink = () => {
         const url = prompt('Masukkan URL:');
@@ -102,6 +103,8 @@ export default function BlogEditor({ value, onChange, placeholder = "Tulis konte
             // Lists
             .replace(/^- (.*$)/gim, '<li>$1</li>')
             .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+            // Blockquote
+            .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
             // Line breaks
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br />');
@@ -146,6 +149,9 @@ export default function BlogEditor({ value, onChange, placeholder = "Tulis konte
                     </button>
                     <button type="button" onClick={handleNumberList} title="Numbered List">
                         <ListOrdered size={16} />
+                    </button>
+                    <button type="button" onClick={handleQuote} title="Quote">
+                        <Quote size={16} />
                     </button>
                 </div>
 

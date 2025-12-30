@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import MediaGallery from '@/components/MediaGallery';
 import MarkdownContent from '@/components/MarkdownContent';
-import { getTutorialBySlug } from '@/lib/tutorials';
+import { getTutorialBySlug, getRelatedTutorials } from '@/lib/tutorials';
+import { readCategories } from '@/lib/categories';
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic';
@@ -16,9 +18,20 @@ export async function generateMetadata({ params }) {
     }
 
     return {
-        title: `${tutorial.title} - Tutorial SIMASET`,
+        title: tutorial.title,
         description: tutorial.content?.substring(0, 160) || '',
     };
+}
+
+// Format date to Indonesian locale
+function formatDate(dateString) {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
 }
 
 export default async function TutorialPage({ params }) {
@@ -33,9 +46,33 @@ export default async function TutorialPage({ params }) {
     const hasMedia = tutorial.media && tutorial.media.length > 0;
     const hasLegacyVideo = !hasMedia && tutorial.videoId;
 
+    const createdDate = formatDate(tutorial.createdAt);
+    const updatedDate = formatDate(tutorial.updatedAt);
+
+    // Get related tutorials
+    const relatedTutorials = await getRelatedTutorials(tutorial.id, tutorial.categoryId, 3);
+    const categories = await readCategories();
+
     return (
         <article>
             <h1>{tutorial.title}</h1>
+
+            {/* Author and Date Info */}
+            <div className="tutorial-meta">
+                <span className="tutorial-author">
+                    👤 Ditulis oleh <strong>{tutorial.author || 'Admin'}</strong>
+                </span>
+                {createdDate && (
+                    <span className="tutorial-date">
+                        📅 {createdDate}
+                    </span>
+                )}
+                {updatedDate && updatedDate !== createdDate && (
+                    <span className="tutorial-updated">
+                        ✏️ Diperbarui: {updatedDate}
+                    </span>
+                )}
+            </div>
 
             {/* New format: multiple media items */}
             {hasMedia && (
@@ -56,7 +93,36 @@ export default async function TutorialPage({ params }) {
             )}
 
             <MarkdownContent content={tutorial.content} />
+
+            {/* Related Tutorials Section */}
+            {relatedTutorials.length > 0 && (
+                <section className="related-tutorials">
+                    <h2>📚 Tutorial Lainnya</h2>
+                    <div className="related-grid">
+                        {relatedTutorials.map(related => {
+                            const category = categories.find(c => c.id === related.categoryId);
+                            return (
+                                <Link
+                                    key={related.id}
+                                    href={`/tutorial/${related.slug}`}
+                                    className="related-card"
+                                >
+                                    <div className="related-card-content">
+                                        <h3>{related.title}</h3>
+                                        {category && (
+                                            <span className="related-category">{category.name}</span>
+                                        )}
+                                        <p className="related-excerpt">
+                                            {related.content?.substring(0, 100).replace(/[#*`>\[\]]/g, '')}...
+                                        </p>
+                                    </div>
+                                    <span className="related-arrow">→</span>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </section>
+            )}
         </article>
     );
 }
-
