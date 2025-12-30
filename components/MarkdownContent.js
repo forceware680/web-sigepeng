@@ -82,6 +82,8 @@ export default function MarkdownContent({ content }) {
             .replace(/`(.*?)`/g, '<code>$1</code>')
             // Links
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+            // Blockquote - must come before list items
+            .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
             // Unordered lists
             .replace(/^\- (.*$)/gim, '<li>$1</li>')
             // Ordered lists
