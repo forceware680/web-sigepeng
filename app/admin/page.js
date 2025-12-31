@@ -153,6 +153,9 @@ export default function AdminDashboard() {
                 <Link href="/admin/categories" className="btn-secondary">
                     📁 Kelola Kategori
                 </Link>
+                <Link href="/admin/users" className="btn-secondary">
+                    👤 Kelola Users
+                </Link>
 
                 {/* Bulk Delete Button */}
                 {selectedIds.length > 0 && (

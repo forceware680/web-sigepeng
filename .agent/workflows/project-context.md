@@ -143,9 +143,50 @@ POST `/api/categories` with:
 }
 ```
 
-## Recent Changes (Dec 2025)
-- Sidebar title changed to "SIMASET WIKI" with link to homepage
-- Added search functionality
-- Added blog-style editor with embed support
-- Added hierarchical category/menu system
-- Fixed login session persistence bug
+## Recent Changes (Dec 30, 2025)
+
+### UI Enhancements
+- **Browser Tab**: Title "SIMASET WIKI", favicon with graduation cap emoji
+- **Responsive Welcome Page**: Different text for mobile (hamburger) vs desktop (sidebar)
+- **Tutorial Two-Column Layout**: Main content + sidebar widget
+
+### Blog Editor
+- **Quote Button**: Insert blockquote with `> ` syntax
+- Blockquote styling with purple left border
+
+### Tutorial Page Features
+- **Author & Date Display**: Shows who wrote the tutorial and when
+- **View Counter**: Tracks views per session, stored in Blob
+- **WhatsApp Share Button**: Green button to share via WhatsApp
+- **Admin Edit Button**: Only visible when logged in as admin
+- **Related Tutorials Section**: Shows 3 related tutorials at bottom
+
+### Sidebar Widgets
+- **Latest Posts Widget**: 5 most recent tutorials
+- **Popular Posts Widget**: 5 most viewed tutorials with ranking
+
+### Admin Dashboard
+- **Multi-Select & Bulk Delete**: Checkbox to select multiple tutorials and delete at once
+- **Session Fix**: Proper handling of loading state to prevent unnecessary login redirects
+
+### Data Model Updates
+- Tutorial now includes: `author`, `views`, `updatedAt`
+- View increment API: `POST /api/tutorials/[id]/views`
+
+### Bug Fixes
+- Fixed data loss bug in Blob storage (was returning defaults on error)
+- Fixed session persistence - no more double login prompts
+- Fixed quote styling not showing in published content
+
+### Performance Notes
+- Vercel Blob is slower than local files (3 API calls per write)
+- Consider database migration for better performance at scale
+
+## Components Added Today
+- `components/LatestPosts.js` - Latest posts widget
+- `components/PopularPosts.js` - Popular posts widget  
+- `components/ViewCounter.js` - View count display
+- `components/PostActions.js` - Share & Edit buttons
+- `components/Providers.js` - SessionProvider wrapper
+- `app/api/tutorials/[id]/views/route.js` - View count API
+
