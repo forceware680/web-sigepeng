@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readTutorials, writeTutorials, getTutorialBySlug } from '@/lib/tutorials';
+import { readTutorials, writeTutorials, getTutorialBySlug, deleteTutorial } from '@/lib/tutorials';
 
 // GET single tutorial by ID or slug
 export async function GET(request, { params }) {
@@ -63,14 +63,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
     try {
         const { id } = await params;
-        const tutorials = await readTutorials();
-        const filteredTutorials = tutorials.filter(t => t.id !== id);
-
-        if (filteredTutorials.length === tutorials.length) {
-            return NextResponse.json({ error: 'Tutorial not found' }, { status: 404 });
-        }
-
-        await writeTutorials(filteredTutorials);
+        await deleteTutorial(id);
         return NextResponse.json({ message: 'Tutorial deleted' });
     } catch (error) {
         console.error('DELETE error:', error);
