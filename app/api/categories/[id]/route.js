@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readCategories, writeCategories, getDescendantIds } from '@/lib/categories';
+import { readCategories, writeCategories, getDescendantIds, deleteCategory } from '@/lib/categories';
 
 // GET single category
 export async function GET(request, { params }) {
@@ -64,8 +64,9 @@ export async function DELETE(request, { params }) {
         const { id } = await params;
         const categories = await readCategories();
 
-        const index = categories.findIndex(c => c.id === id);
-        if (index === -1) {
+        // Check if category exists
+        const category = categories.find(c => c.id === id);
+        if (!category) {
             return NextResponse.json({ error: 'Category not found' }, { status: 404 });
         }
 
@@ -77,9 +78,7 @@ export async function DELETE(request, { params }) {
             }, { status: 400 });
         }
 
-        categories.splice(index, 1);
-        await writeCategories(categories);
-
+        await deleteCategory(id);
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('DELETE category error:', error);
