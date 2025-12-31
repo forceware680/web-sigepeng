@@ -10,7 +10,7 @@ Website tutorial CMS untuk SIMASET (Sistem Informasi Manajemen Aset). Dibangun d
 ## Tech Stack
 - **Framework**: Next.js 14 (App Router)
 - **Auth**: NextAuth.js dengan credentials provider
-- **Storage**: Local JSON files + Vercel Blob (production)
+- **Database**: Supabase PostgreSQL (production) / Local JSON (development)
 - **Styling**: Vanilla CSS dengan dark theme
 - **Icons**: Lucide React
 
@@ -22,8 +22,10 @@ c:\web-sigepeng\
 │   │   ├── categories/  # Category management
 │   │   ├── create/      # Create tutorial
 │   │   ├── edit/[id]/   # Edit tutorial
-│   │   └── login/       # Admin login
+│   │   ├── login/       # Admin login
+│   │   └── users/       # Admin user management (NEW)
 │   ├── api/             # API routes
+│   │   ├── admin-users/ # Admin users CRUD (NEW)
 │   │   ├── auth/        # NextAuth
 │   │   ├── categories/  # CRUD kategori
 │   │   ├── search/      # Search API
@@ -39,11 +41,13 @@ c:\web-sigepeng\
 │   ├── Sidebar.js       # Navigation sidebar
 │   └── YouTubeEmbed.js  # YouTube embed
 ├── data/
+│   ├── admin.json       # Admin users (local dev)
 │   ├── categories.json  # Kategori data
 │   └── tutorials.json   # Tutorial data
 └── lib/
-    ├── categories.js    # Category functions
-    └── tutorials.js     # Tutorial functions
+    ├── categories.js    # Category functions (Supabase)
+    ├── supabase.js      # Supabase client (NEW)
+    └── tutorials.js     # Tutorial functions (Supabase)
 ```
 
 ## Key Features
@@ -69,6 +73,12 @@ c:\web-sigepeng\
 - Embed video: `[VIDEO:youtube_id]`
 - Embed gambar: `[IMAGE:url|caption]`
 - Preview mode
+
+### 5. Admin User Management (NEW)
+- Manage admin users di `/admin/users`
+- Tambah user baru
+- Ganti password (verifikasi password lama)
+- Hapus user (tidak bisa hapus admin terakhir)
 
 ## Data Models
 
@@ -111,12 +121,25 @@ c:\web-sigepeng\
 - Session checked on `/admin/*` routes
 - Login page auto-redirects if already authenticated
 
-## Vercel Deployment
-- Data persistence via Vercel Blob
-- Environment variables needed:
-  - `NEXTAUTH_SECRET`
-  - `NEXTAUTH_URL`
-  - `BLOB_READ_WRITE_TOKEN` (for Vercel Blob)
+## Supabase Database
+
+### Tables
+- `categories` - Kategori tutorial
+- `tutorials` - Tutorial content
+- `tutorial_media` - Media items per tutorial
+- `admin_users` - Admin accounts
+
+### Environment Variables (Vercel)
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ... (required for write operations)
+NEXTAUTH_SECRET=your-secret
+NEXTAUTH_URL=https://your-domain.vercel.app
+```
+
+### Migration
+Run `supabase-migration.sql` in Supabase SQL Editor to create tables and insert initial data.
 
 ## Common Tasks
 
@@ -142,6 +165,38 @@ POST `/api/categories` with:
   "order": 1
 }
 ```
+
+### Adding new admin user
+POST `/api/admin-users` with:
+```json
+{
+  "username": "...",
+  "password": "...",
+  "name": "..."
+}
+```
+
+## Recent Changes (Dec 31, 2025)
+
+### Supabase Migration
+- Migrated from Vercel Blob to Supabase PostgreSQL
+- Created `lib/supabase.js` for client initialization
+- Updated `lib/tutorials.js` and `lib/categories.js` for Supabase
+- SQL migration script: `supabase-migration.sql`
+
+### Admin User Management
+- New page: `/admin/users` for managing admin accounts
+- API routes: `/api/admin-users` for CRUD operations
+- Features: Add user, Edit user, Change password, Delete user
+- Password change requires old password verification
+- Cannot delete last admin user
+
+### Files Added
+- `lib/supabase.js` - Supabase client
+- `app/admin/users/page.js` - User management UI
+- `app/api/admin-users/route.js` - List/Create users
+- `app/api/admin-users/[id]/route.js` - Update/Delete user
+- `supabase-migration.sql` - Database schema
 
 ## Recent Changes (Dec 30, 2025)
 
@@ -178,15 +233,4 @@ POST `/api/categories` with:
 - Fixed session persistence - no more double login prompts
 - Fixed quote styling not showing in published content
 
-### Performance Notes
-- Vercel Blob is slower than local files (3 API calls per write)
-- Consider database migration for better performance at scale
-
-## Components Added Today
-- `components/LatestPosts.js` - Latest posts widget
-- `components/PopularPosts.js` - Popular posts widget  
-- `components/ViewCounter.js` - View count display
-- `components/PostActions.js` - Share & Edit buttons
-- `components/Providers.js` - SessionProvider wrapper
-- `app/api/tutorials/[id]/views/route.js` - View count API
 
