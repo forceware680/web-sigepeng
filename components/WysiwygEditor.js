@@ -125,9 +125,11 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
     const [mode, setMode] = useState('visual'); // 'visual' or 'source'
     const [sourceContent, setSourceContent] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
     const [showGallery, setShowGallery] = useState(false);
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
+    const bulkFileInputRef = useRef(null);
 
     // TipTap Editor
     const editor = useEditor({
@@ -298,6 +300,89 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
         fileInputRef.current?.click();
     };
 
+    // Trigger bulk file input click
+    const triggerBulkUpload = () => {
+        bulkFileInputRef.current?.click();
+    };
+
+    // Handle bulk image upload
+    const handleBulkUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        // Filter only valid images
+        const validFiles = files.filter(file => {
+            if (!file.type.startsWith('image/')) {
+                console.warn(`Skipping non-image file: ${file.name}`);
+                return false;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                console.warn(`Skipping large file: ${file.name}`);
+                return false;
+            }
+            return true;
+        });
+
+        if (validFiles.length === 0) {
+            alert('Tidak ada file gambar yang valid');
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress({ current: 0, total: validFiles.length });
+
+        const uploadedUrls = [];
+        let successCount = 0;
+
+        for (let i = 0; i < validFiles.length; i++) {
+            const file = validFiles[i];
+            setUploadProgress({ current: i + 1, total: validFiles.length });
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    uploadedUrls.push(result.url);
+                    successCount++;
+                }
+            } catch (error) {
+                console.error(`Failed to upload ${file.name}:`, error);
+            }
+        }
+
+        // Insert all uploaded images
+        if (uploadedUrls.length > 0) {
+            if (mode === 'visual') {
+                uploadedUrls.forEach(url => {
+                    editor?.chain().focus().setImage({ src: url, alt: '', title: '' }).run();
+                    editor?.commands.insertContent('<p></p>'); // Add spacing
+                });
+            } else {
+                const embedCodes = uploadedUrls.map(url => `[IMAGE:${url}]`).join('\n');
+                insertAtCursor(`\n${embedCodes}\n`);
+            }
+            alert(`✅ ${successCount}/${validFiles.length} gambar berhasil diupload!`);
+        } else {
+            alert('❌ Gagal upload semua gambar');
+        }
+
+        setUploading(false);
+        setUploadProgress({ current: 0, total: 0 });
+
+        // Reset file input
+        if (bulkFileInputRef.current) {
+            bulkFileInputRef.current.value = '';
+        }
+    };
+
     // Helper for source mode text insertion
     const insertAtCursor = (text) => {
         const textarea = textareaRef.current;
@@ -439,11 +524,21 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                         <Image size={16} />
                     </ToolbarButton>
                     <ToolbarButton
-                        onClick={triggerImageUpload}
-                        title="Upload Gambar ke Cloudinary"
+                        onClick={triggerBulkUpload}
+                        title="Upload Gambar (bisa pilih banyak)"
                         isActive={uploading}
                     >
-                        {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
+                        {uploading ? (
+                            uploadProgress.total > 1 ? (
+                                <span className="upload-progress-badge">
+                                    {uploadProgress.current}/{uploadProgress.total}
+                                </span>
+                            ) : (
+                                <Loader2 size={16} className="spin" />
+                            )
+                        ) : (
+                            <Upload size={16} />
+                        )}
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => setShowGallery(true)}
@@ -451,12 +546,13 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                     >
                         <FolderOpen size={16} />
                     </ToolbarButton>
-                    {/* Hidden file input */}
+                    {/* Hidden file input for upload (supports multiple) */}
                     <input
                         type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
+                        ref={bulkFileInputRef}
+                        onChange={handleBulkUpload}
                         accept="image/*"
+                        multiple
                         style={{ display: 'none' }}
                     />
                 </div>

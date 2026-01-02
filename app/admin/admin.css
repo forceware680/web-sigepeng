@@ -825,6 +825,18 @@
     opacity: 0.7;
 }
 
+/* Upload progress badge */
+.upload-progress-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+}
+
 /* TipTap Content Area */
 .tiptap-content {
     min-height: 300px;

@@ -4,8 +4,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Video, Image } from 'lucide-react';
+import { Trash2, Video, Image, FolderOpen } from 'lucide-react';
 import WysiwygEditor from '@/components/WysiwygEditor';
+import ImageGalleryModal from '@/components/ImageGalleryModal';
 
 export default function EditTutorial() {
     const { data: session, status } = useSession();
@@ -21,7 +22,9 @@ export default function EditTutorial() {
         content: '',
         order: 1
     });
+
     const [media, setMedia] = useState([]);
+    const [showMediaGallery, setShowMediaGallery] = useState(false);
 
     useEffect(() => {
         // Only redirect after loading is complete
@@ -111,6 +114,20 @@ export default function EditTutorial() {
 
     const removeMedia = (id) => {
         setMedia(media.filter(item => item.id !== id));
+    };
+
+    // Handle selecting image from Cloudinary gallery
+    const handleMediaGallerySelect = (imageUrl) => {
+        const newMedia = {
+            id: `media-${Date.now()}`,
+            type: 'image',
+            videoId: '',
+            url: imageUrl,
+            title: '',
+            caption: ''
+        };
+        setMedia([...media, newMedia]);
+        setShowMediaGallery(false);
     };
 
     const handleSubmit = async (e) => {
@@ -225,6 +242,9 @@ export default function EditTutorial() {
                             <button type="button" className="btn-add-media" onClick={() => addMedia('image')}>
                                 <Image size={16} /> Tambah Gambar
                             </button>
+                            <button type="button" className="btn-add-media btn-gallery" onClick={() => setShowMediaGallery(true)}>
+                                <FolderOpen size={16} /> Pilih dari Gallery
+                            </button>
                         </div>
 
                         {media.length === 0 && (
@@ -316,6 +336,13 @@ export default function EditTutorial() {
                     </button>
                 </div>
             </form>
+
+            {/* Image Gallery Modal for Media Section */}
+            <ImageGalleryModal
+                isOpen={showMediaGallery}
+                onClose={() => setShowMediaGallery(false)}
+                onSelect={handleMediaGallerySelect}
+            />
         </div>
     );
 }
