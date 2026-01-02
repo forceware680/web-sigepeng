@@ -72,6 +72,9 @@ const htmlToMarkdown = (html) => {
         .replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```')
         // Links
         .replace(/<a href="(.*?)">(.*?)<\/a>/gi, '[$2]($1)')
+        // Images (convert to custom IMAGE syntax)
+        .replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '[IMAGE:$1|$2]')
+        .replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, '[IMAGE:$1]')
         // Blockquote
         .replace(/<blockquote><p>(.*?)<\/p><\/blockquote>/gi, '> $1\n')
         .replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n')
@@ -138,6 +141,9 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                 heading: {
                     levels: [1, 2, 3],
                 },
+                // Disable potentially conflicting extensions
+                link: false,
+                underline: false,
             }),
             Link.configure({
                 openOnClick: false,

@@ -9,11 +9,10 @@ export default function MarkdownContent({ content }) {
     // Parse content and extract embeds
     const parseContent = (text) => {
         const parts = [];
-        let currentText = '';
         let key = 0;
 
-        // Split by embed patterns
-        const embedPattern = /\[(VIDEO|IMAGE):([^\]]+)\]/g;
+        // Split by embed patterns: [VIDEO:...], [IMAGE:...], or <img ...>
+        const embedPattern = /\[(VIDEO|IMAGE):([^\]]+)\]|<img\s+[^>]*>/g;
         let lastIndex = 0;
         let match;
 
@@ -30,14 +29,18 @@ export default function MarkdownContent({ content }) {
                 }
             }
 
-            // Add embed
+            const matchStr = match[0];
+
+            // Handle [VIDEO:...]
             if (match[1] === 'VIDEO') {
                 parts.push({
                     type: 'video',
                     videoId: match[2].trim(),
                     key: key++
                 });
-            } else if (match[1] === 'IMAGE') {
+            }
+            // Handle [IMAGE:...]
+            else if (match[1] === 'IMAGE') {
                 const [url, caption] = match[2].split('|').map(s => s.trim());
                 parts.push({
                     type: 'image',
@@ -46,8 +49,28 @@ export default function MarkdownContent({ content }) {
                     key: key++
                 });
             }
+            // Handle <img ...>
+            else if (matchStr.startsWith('<img')) {
+                // Extract src
+                const srcMatch = matchStr.match(/src="([^"]+)"/);
+                const url = srcMatch ? srcMatch[1] : '';
 
-            lastIndex = match.index + match[0].length;
+                // Extract alt/title for caption
+                const altMatch = matchStr.match(/alt="([^"]+)"/);
+                const titleMatch = matchStr.match(/title="([^"]+)"/);
+                const caption = (altMatch ? altMatch[1] : '') || (titleMatch ? titleMatch[1] : '');
+
+                if (url) {
+                    parts.push({
+                        type: 'image',
+                        url: url,
+                        caption: caption,
+                        key: key++
+                    });
+                }
+            }
+
+            lastIndex = match.index + matchStr.length;
         }
 
         // Add remaining text

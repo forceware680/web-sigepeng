@@ -725,6 +725,17 @@ body {
   margin: 0;
 }
 
+
+/* ===== Content Image Styling ===== */
+.markdown-content img,
+.tutorial-main img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1rem 0;
+  display: block;
+}
+
 /* ===== Related Tutorials Section ===== */
 .related-tutorials {
   margin-top: 3rem;

@@ -23,7 +23,7 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/gallery?limit=50');
+            const response = await fetch(`/api/gallery?limit=50&t=${Date.now()}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -50,14 +50,17 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                 body: JSON.stringify({ public_id }),
             });
 
-            if (response.ok) {
-                setImages(images.filter(img => img.public_id !== public_id));
-                if (selectedImage?.public_id === public_id) {
-                    setSelectedImage(null);
-                }
-                if (previewImage?.public_id === public_id) {
-                    setPreviewImage(null);
-                }
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Gagal menghapus gambar');
+            }
+
+            setImages(images.filter(img => img.public_id !== public_id));
+            if (selectedImage?.public_id === public_id) {
+                setSelectedImage(null);
+            }
+            if (previewImage?.public_id === public_id) {
+                setPreviewImage(null);
             }
         } catch (err) {
             alert('Gagal menghapus gambar');
@@ -80,6 +83,11 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
 
     const closePreview = () => {
         setPreviewImage(null);
+    };
+
+    const handleImageError = (public_id) => {
+        // Silently remove the image from the list if it fails to load (Ghost image)
+        setImages(prev => prev.filter(img => img.public_id !== public_id));
     };
 
     if (!isOpen) return null;
@@ -121,7 +129,12 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                                         className={`gallery-item ${selectedImage?.public_id === img.public_id ? 'selected' : ''}`}
                                         onClick={() => setSelectedImage(img)}
                                     >
-                                        <img src={img.thumbnail} alt="" loading="lazy" />
+                                        <img
+                                            src={img.thumbnail}
+                                            alt=""
+                                            loading="lazy"
+                                            onError={() => handleImageError(img.public_id)}
+                                        />
                                         {selectedImage?.public_id === img.public_id && (
                                             <div className="gallery-check">
                                                 <Check size={20} />

@@ -1,14 +1,14 @@
-'use client';
+import ZoomableImage from './ZoomableImage';
 
 export default function ImageEmbed({ url, title = "", caption = "", alt = "" }) {
     if (!url) return null;
 
     return (
         <figure className="image-embed">
-            <img
+            <ZoomableImage
                 src={url}
                 alt={alt || title || "Tutorial image"}
-                loading="lazy"
+                title={title || caption}
             />
             {(title || caption) && (
                 <figcaption>

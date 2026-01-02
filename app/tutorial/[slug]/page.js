@@ -129,7 +129,12 @@ export default async function TutorialPage({ params }) {
                                                 <span className="related-category">{category.name}</span>
                                             )}
                                             <p className="related-excerpt">
-                                                {related.content?.substring(0, 100).replace(/[#*`>\[\]]/g, '')}...
+                                                {related.content
+                                                    ?.replace(/\[(VIDEO|IMAGE):[^\]]+\]/g, '') // Remove custom embeds
+                                                    .replace(/<[^>]*>?/gm, '') // Remove HTML tags
+                                                    .replace(/[#*`>\[\]]/g, '') // Remove remaining markdown chars
+                                                    .substring(0, 100)
+                                                    .trim()}...
                                             </p>
                                         </div>
                                         <span className="related-arrow">→</span>

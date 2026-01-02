@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import cloudinary from '@/lib/cloudinary';
 
@@ -8,10 +10,9 @@ export async function GET(request) {
         const maxResults = parseInt(searchParams.get('limit') || '30');
         const nextCursor = searchParams.get('cursor') || null;
 
-        // Get images from simaset-wiki folder
+        // Get images from all folders
         const options = {
             type: 'upload',
-            prefix: 'simaset-wiki/',
             max_results: maxResults,
             resource_type: 'image',
         };
@@ -39,13 +40,17 @@ export async function GET(request) {
                 bytes: img.bytes,
                 thumbnail: thumbnailUrl,
             };
-        });
+        }).filter(img => img.bytes > 0); // Filter out ghost/invalid images
 
         return NextResponse.json({
             success: true,
             images,
             next_cursor: result.next_cursor || null,
             total: result.resources.length,
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0',
+            },
         });
 
     } catch (error) {
@@ -69,7 +74,19 @@ export async function DELETE(request) {
             );
         }
 
-        await cloudinary.uploader.destroy(public_id);
+        // Use Admin API to match the Listing API logic
+        // delete_resources returns { deleted: { [public_id]: "deleted" | "not_found" | ... } }
+        const result = await cloudinary.api.delete_resources([public_id], {
+            type: 'upload',
+            resource_type: 'image'
+        });
+
+        const status = result.deleted?.[public_id];
+
+        if (status !== 'deleted') {
+            console.error(`Cloudinary delete failed for ${public_id}. Status: ${status}`);
+            throw new Error(`Cloudinary delete failed. Status: ${status}`);
+        }
 
         return NextResponse.json({
             success: true,

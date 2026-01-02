@@ -264,3 +264,47 @@ POST `/api/admin-users` with:
 ### Admin Credentials
 - Username: `admin`
 - Password: `hermangantengsekali` (hashed dengan bcrypt)
+
+## Recent Changes (Jan 2, 2026)
+
+### Cloudinary Integration ☁️
+- **Purpose**: Menggantikan ImgBB (limit 32MB) dengan Cloudinary untuk hosting gambar lebih handal.
+- **Library**: `cloudinary` npm package
+- **Config**: `lib/cloudinary.js`
+- **Env Vars**:
+  - `CLOUDINARY_CLOUD_NAME=dwyadbsxu`
+  - `CLOUDINARY_API_KEY=...`
+  - `CLOUDINARY_API_SECRET=...`
+
+### Advanced WYSIWYG Editor 📝
+- **Upgrade**: Mengganti textarea biasa dengan **TipTap Editor**.
+- **Dual Mode**:
+  - **Visual**: Like Word/Docs. Gambar tampil langsung (bukan kode).
+  - **Source**: Edit markdown raw.
+- **Inline Image**: Gambar dirender sebagai `<img>` di visual mode, bukan `[IMAGE:...]`. Disimpan tetap sebagai markdown `[IMAGE:...]`.
+
+### Image Features 📸
+1.  **Bulk Upload**:
+    - Tombol Upload (📷+) di toolbar.
+    - Support select **multiple images**.
+    - Progress indicator (e.g. "2/5").
+2.  **Gallery Integration**:
+    - **Modal Gallery**: Browse semua gambar yang pernah diupload.
+    - **Reusable**: `components/ImageGalleryModal.js`.
+    - **Access**:
+      - Toolbar Editor (📁 Icon).
+      - Section "Media (Video & Gambar)" di halaman Create/Edit.
+3.  **Preview**:
+    - Lightbox/Fullscreen zoom di gallery.
+    - Detail view di sidebar gallery.
+
+### Visual Polish ✨
+- **Shiny Title**: Efek gradient ungu animasi pada judul tutorial (`.shiny-title` di `globals.css`).
+- **Modern UI**: Styling editor, gallery modal, dan media cards yang lebih rapi.
+
+### Key Files Created/Modified
+- `components/WysiwygEditor.js` (Major update)
+- `components/ImageGalleryModal.js` (New)
+- `app/api/upload/route.js` (Switched to Cloudinary)
+- `app/api/gallery/route.js` (New)
+- `app/admin/create/page.js` & `edit/[id]/page.js` (Added gallery picker)
