@@ -1,0 +1,500 @@
+'use client';
+
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import TiptapImage from '@tiptap/extension-image';
+import {
+    Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
+    List, ListOrdered, Code, Link as LinkIcon, Video, Image, Quote,
+    Eye, Code2, Upload, Loader2, FolderOpen
+} from 'lucide-react';
+import ImageGalleryModal from './ImageGalleryModal';
+
+// Convert Markdown to HTML for loading into TipTap
+const markdownToHtml = (markdown) => {
+    if (!markdown) return '';
+
+    // Check if content is already HTML (starts with < tag)
+    if (markdown.trim().startsWith('<')) {
+        return markdown;
+    }
+
+    return markdown
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // Bold
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Code blocks
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        // Inline code
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        // Links
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+        // Blockquote
+        .replace(/^> (.*$)/gim, '<blockquote><p>$1</p></blockquote>')
+        // Unordered lists
+        .replace(/^\- (.*$)/gim, '<li>$1</li>')
+        // Ordered lists
+        .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+        // Paragraphs (double newline)
+        .replace(/\n\n/g, '</p><p>')
+        // Line breaks
+        .replace(/\n/g, '<br />');
+};
+
+// Convert HTML back to Markdown for source mode
+const htmlToMarkdown = (html) => {
+    if (!html) return '';
+
+    return html
+        // Headers
+        .replace(/<h1>(.*?)<\/h1>/gi, '# $1\n')
+        .replace(/<h2>(.*?)<\/h2>/gi, '## $1\n')
+        .replace(/<h3>(.*?)<\/h3>/gi, '### $1\n')
+        // Bold
+        .replace(/<strong>(.*?)<\/strong>/gi, '**$1**')
+        .replace(/<b>(.*?)<\/b>/gi, '**$1**')
+        // Italic
+        .replace(/<em>(.*?)<\/em>/gi, '*$1*')
+        .replace(/<i>(.*?)<\/i>/gi, '*$1*')
+        // Underline (keep as HTML since markdown doesn't support)
+        .replace(/<u>(.*?)<\/u>/gi, '<u>$1</u>')
+        // Code
+        .replace(/<code>(.*?)<\/code>/gi, '`$1`')
+        .replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```')
+        // Links
+        .replace(/<a href="(.*?)">(.*?)<\/a>/gi, '[$2]($1)')
+        // Blockquote
+        .replace(/<blockquote><p>(.*?)<\/p><\/blockquote>/gi, '> $1\n')
+        .replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n')
+        // Lists
+        .replace(/<li>(.*?)<\/li>/gi, '- $1\n')
+        .replace(/<ul>|<\/ul>|<ol>|<\/ol>/gi, '')
+        // Paragraphs
+        .replace(/<p>(.*?)<\/p>/gi, '$1\n\n')
+        // Line breaks
+        .replace(/<br\s*\/?>/gi, '\n')
+        // Clean up extra whitespace
+        .replace(/\n\n\n+/g, '\n\n')
+        .trim();
+};
+
+// Toolbar Button Component
+const ToolbarButton = ({ onClick, isActive, title, children }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className={`toolbar-btn ${isActive ? 'active' : ''}`}
+        title={title}
+    >
+        {children}
+    </button>
+);
+
+// Mode Toggle Component - Icon Only
+const ModeToggle = ({ mode, onModeChange }) => (
+    <div className="mode-toggle">
+        <button
+            type="button"
+            onClick={() => onModeChange('visual')}
+            className={`mode-btn ${mode === 'visual' ? 'active' : ''}`}
+            title="Visual Mode - WYSIWYG"
+        >
+            <Eye size={18} />
+        </button>
+        <button
+            type="button"
+            onClick={() => onModeChange('source')}
+            className={`mode-btn ${mode === 'source' ? 'active' : ''}`}
+            title="Source Mode - Markdown"
+        >
+            <Code2 size={18} />
+        </button>
+    </div>
+);
+
+export default function WysiwygEditor({ value, onChange, placeholder = "Tulis konten tutorial..." }) {
+    const [mode, setMode] = useState('visual'); // 'visual' or 'source'
+    const [sourceContent, setSourceContent] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [showGallery, setShowGallery] = useState(false);
+    const textareaRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    // TipTap Editor
+    const editor = useEditor({
+        extensions: [
+            StarterKit.configure({
+                heading: {
+                    levels: [1, 2, 3],
+                },
+            }),
+            Link.configure({
+                openOnClick: false,
+            }),
+            Underline,
+            TiptapImage.configure({
+                inline: false,
+                allowBase64: true,
+            }),
+            Placeholder.configure({
+                placeholder: placeholder,
+            }),
+        ],
+        content: markdownToHtml(value || ''),
+        immediatelyRender: false, // Required for Next.js SSR compatibility
+        onUpdate: ({ editor }) => {
+            if (mode === 'visual') {
+                const html = editor.getHTML();
+                onChange(html);
+            }
+        },
+    });
+
+    // Sync content when switching modes
+    const handleModeChange = useCallback((newMode) => {
+        if (newMode === mode) return;
+
+        if (newMode === 'source') {
+            // Switching to source: convert HTML to Markdown
+            const html = editor?.getHTML() || '';
+            const markdown = htmlToMarkdown(html);
+            setSourceContent(markdown);
+        } else {
+            // Switching to visual: convert Markdown to HTML
+            const html = markdownToHtml(sourceContent);
+            editor?.commands.setContent(html);
+        }
+
+        setMode(newMode);
+    }, [mode, editor, sourceContent]);
+
+    // Handle source mode changes
+    const handleSourceChange = (e) => {
+        const newContent = e.target.value;
+        setSourceContent(newContent);
+        // Also update parent (as markdown)
+        onChange(newContent);
+    };
+
+    // Insert video embed
+    const handleVideoEmbed = () => {
+        const videoId = prompt('Masukkan YouTube Video ID:\n(Contoh: dQw4w9WgXcQ dari URL youtube.com/watch?v=dQw4w9WgXcQ)');
+        if (videoId) {
+            if (mode === 'visual') {
+                editor?.commands.insertContent(`<p>[VIDEO:${videoId}]</p>`);
+            } else {
+                insertAtCursor(`\n[VIDEO:${videoId}]\n`);
+            }
+        }
+    };
+
+    // Insert image embed
+    const handleImageEmbed = () => {
+        const imageUrl = prompt('Masukkan URL Gambar:');
+        if (imageUrl) {
+            const caption = prompt('Masukkan caption gambar (opsional):') || '';
+            if (mode === 'visual') {
+                // Insert actual image in visual mode
+                editor?.chain().focus().setImage({ src: imageUrl, alt: caption, title: caption }).run();
+            } else {
+                // Insert embed code in source mode
+                const embedCode = caption ? `[IMAGE:${imageUrl}|${caption}]` : `[IMAGE:${imageUrl}]`;
+                insertAtCursor(`\n${embedCode}\n`);
+            }
+        }
+    };
+
+    // Insert link
+    const handleLink = () => {
+        const url = prompt('Masukkan URL:');
+        if (url) {
+            if (mode === 'visual') {
+                editor?.chain().focus().setLink({ href: url }).run();
+            } else {
+                const textarea = textareaRef.current;
+                if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = sourceContent.substring(start, end) || 'link text';
+                    insertAtCursor(`[${selectedText}](${url})`);
+                }
+            }
+        }
+    };
+
+    // Upload image to ImgBB
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            return;
+        }
+
+        // Validate file size (max 32MB for ImgBB)
+        if (file.size > 32 * 1024 * 1024) {
+            alert('Image size must be less than 32MB');
+            return;
+        }
+
+        setUploading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            // Ask for caption
+            const caption = prompt('Masukkan caption gambar (opsional):') || '';
+
+            if (mode === 'visual') {
+                // Insert actual image in visual mode
+                editor?.chain().focus().setImage({ src: result.url, alt: caption, title: caption }).run();
+            } else {
+                // Insert embed code in source mode
+                const embedCode = caption
+                    ? `[IMAGE:${result.url}|${caption}]`
+                    : `[IMAGE:${result.url}]`;
+                insertAtCursor(`\n${embedCode}\n`);
+            }
+
+            alert('✅ Gambar berhasil diupload!');
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('❌ Gagal upload gambar: ' + error.message);
+        } finally {
+            setUploading(false);
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    // Trigger file input click
+    const triggerImageUpload = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Helper for source mode text insertion
+    const insertAtCursor = (text) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const newContent = sourceContent.substring(0, start) + text + sourceContent.substring(start);
+        setSourceContent(newContent);
+        onChange(newContent);
+
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + text.length, start + text.length);
+        }, 0);
+    };
+
+    // Handle gallery image selection
+    const handleGallerySelect = (imageUrl) => {
+        const caption = prompt('Masukkan caption gambar (opsional):') || '';
+
+        if (mode === 'visual') {
+            // Insert actual image in visual mode
+            editor?.chain().focus().setImage({ src: imageUrl, alt: caption, title: caption }).run();
+        } else {
+            // Insert embed code in source mode
+            const embedCode = caption
+                ? `[IMAGE:${imageUrl}|${caption}]`
+                : `[IMAGE:${imageUrl}]`;
+            insertAtCursor(`\n${embedCode}\n`);
+        }
+    };
+
+    if (!editor && mode === 'visual') {
+        return <div className="editor-loading">Loading editor...</div>;
+    }
+
+    return (
+        <div className="wysiwyg-editor">
+            <div className="editor-toolbar">
+                {/* Formatting buttons - only show in visual mode */}
+                {mode === 'visual' && (
+                    <>
+                        <div className="toolbar-group">
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleBold().run()}
+                                isActive={editor?.isActive('bold')}
+                                title="Bold"
+                            >
+                                <Bold size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleItalic().run()}
+                                isActive={editor?.isActive('italic')}
+                                title="Italic"
+                            >
+                                <Italic size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleUnderline().run()}
+                                isActive={editor?.isActive('underline')}
+                                title="Underline"
+                            >
+                                <UnderlineIcon size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleCode().run()}
+                                isActive={editor?.isActive('code')}
+                                title="Code"
+                            >
+                                <Code size={16} />
+                            </ToolbarButton>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        <div className="toolbar-group">
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                                isActive={editor?.isActive('heading', { level: 1 })}
+                                title="Heading 1"
+                            >
+                                <Heading1 size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                                isActive={editor?.isActive('heading', { level: 2 })}
+                                title="Heading 2"
+                            >
+                                <Heading2 size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+                                isActive={editor?.isActive('heading', { level: 3 })}
+                                title="Heading 3"
+                            >
+                                <Heading3 size={16} />
+                            </ToolbarButton>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        <div className="toolbar-group">
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                                isActive={editor?.isActive('bulletList')}
+                                title="Bullet List"
+                            >
+                                <List size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                                isActive={editor?.isActive('orderedList')}
+                                title="Numbered List"
+                            >
+                                <ListOrdered size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                                isActive={editor?.isActive('blockquote')}
+                                title="Quote"
+                            >
+                                <Quote size={16} />
+                            </ToolbarButton>
+                        </div>
+
+                        <div className="toolbar-separator" />
+                    </>
+                )}
+
+                {/* Embed buttons - always show */}
+                <div className="toolbar-group">
+                    <ToolbarButton onClick={handleLink} title="Insert Link">
+                        <LinkIcon size={16} />
+                    </ToolbarButton>
+                    <ToolbarButton onClick={handleVideoEmbed} title="Embed Video">
+                        <Video size={16} />
+                    </ToolbarButton>
+                    <ToolbarButton onClick={handleImageEmbed} title="Embed Image URL">
+                        <Image size={16} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={triggerImageUpload}
+                        title="Upload Gambar ke Cloudinary"
+                        isActive={uploading}
+                    >
+                        {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={() => setShowGallery(true)}
+                        title="Gallery Gambar Cloudinary"
+                    >
+                        <FolderOpen size={16} />
+                    </ToolbarButton>
+                    {/* Hidden file input */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                    />
+                </div>
+
+                <div className="toolbar-spacer" />
+
+                {/* Mode Toggle */}
+                <ModeToggle mode={mode} onModeChange={handleModeChange} />
+            </div>
+
+            {/* Editor Content */}
+            {mode === 'visual' ? (
+                <EditorContent editor={editor} className="tiptap-content" />
+            ) : (
+                <textarea
+                    ref={textareaRef}
+                    value={sourceContent}
+                    onChange={handleSourceChange}
+                    placeholder={placeholder}
+                    rows={15}
+                    className="editor-textarea source-mode"
+                />
+            )}
+
+            <div className="editor-help">
+                {mode === 'visual' ? (
+                    <span>💡 Mode Visual: Formatting langsung terlihat. Switch ke Source untuk edit markdown.</span>
+                ) : (
+                    <span>💡 Mode Source: Edit kode markdown. Gunakan <code>[VIDEO:id]</code> dan <code>[IMAGE:url|caption]</code> untuk embed.</span>
+                )}
+            </div>
+
+            {/* Image Gallery Modal */}
+            <ImageGalleryModal
+                isOpen={showGallery}
+                onClose={() => setShowGallery(false)}
+                onSelect={handleGallerySelect}
+            />
+        </div>
+    );
+}

@@ -11,6 +11,34 @@
   --sidebar-width: 280px;
 }
 
+/* ===== Shiny Title Effect ===== */
+.shiny-title,
+h1.shiny-title,
+article h1.shiny-title {
+  background: linear-gradient(135deg,
+      #c084fc 0%,
+      #a855f7 25%,
+      #8b5cf6 50%,
+      #6366f1 75%,
+      #c084fc 100%) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: shiny-shimmer 3s ease-in-out infinite !important;
+  color: transparent !important;
+}
+
+@keyframes shiny-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+
+  100% {
+    background-position: -200% center;
+  }
+}
+
 /* ===== Reset & Base ===== */
 * {
   margin: 0;

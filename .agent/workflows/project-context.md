@@ -233,4 +233,34 @@ POST `/api/admin-users` with:
 - Fixed session persistence - no more double login prompts
 - Fixed quote styling not showing in published content
 
+## Recent Changes (Dec 31, 2025 - Session 2)
 
+### Delete Bug Fixes
+**Problem**: Delete (single/bulk) untuk tutorial dan kategori tidak berfungsi - item yang dihapus tetap muncul setelah refresh.
+
+**Root Cause**: DELETE API routes menggunakan `writeXxx()` yang hanya melakukan **upsert** untuk item tersisa, bukan menghapus item target dari Supabase.
+
+**Solution**: 
+- Menambahkan fungsi universal `deleteTutorial(id)` di `lib/tutorials.js`
+- Menambahkan fungsi universal `deleteCategory(id)` di `lib/categories.js`
+- Mengupdate DELETE handlers di API routes untuk menggunakan fungsi delete yang benar
+
+**Files Modified**:
+- `lib/tutorials.js` - Added `deleteTutorial()` function
+- `lib/categories.js` - Added `deleteCategory()` function
+- `app/api/tutorials/[id]/route.js` - Updated DELETE handler
+- `app/api/categories/[id]/route.js` - Updated DELETE handler
+
+### Session Persistence Fix
+**Problem**: Setelah login dan reload browser, user diminta login lagi.
+
+**Root Cause**: Nested SessionProvider - ada `Providers.js` di root layout DAN `AuthProvider.js` di admin layout. Dua SessionProvider menyebabkan session state tidak konsisten.
+
+**Solution**: Menghapus wrapper `AuthProvider` dari `app/admin/layout.js` karena root layout sudah handle session via `Providers` component.
+
+**Files Modified**:
+- `app/admin/layout.js` - Removed AuthProvider wrapper
+
+### Admin Credentials
+- Username: `admin`
+- Password: `hermangantengsekali` (hashed dengan bcrypt)

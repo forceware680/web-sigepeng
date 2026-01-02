@@ -61,7 +61,7 @@ export default async function TutorialPage({ params }) {
         <div className="tutorial-layout">
             {/* Main Article */}
             <article className="tutorial-main">
-                <h1>{tutorial.title}</h1>
+                <h1 className="shiny-title">{tutorial.title}</h1>
 
                 {/* Author, Date, and Actions */}
                 <div className="tutorial-header-row">

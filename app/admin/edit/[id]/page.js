@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trash2, Video, Image } from 'lucide-react';
-import BlogEditor from '@/components/BlogEditor';
+import WysiwygEditor from '@/components/WysiwygEditor';
 
 export default function EditTutorial() {
     const { data: session, status } = useSession();
@@ -303,7 +303,7 @@ export default function EditTutorial() {
 
                 <div className="form-group">
                     <label>Konten Tutorial</label>
-                    <BlogEditor
+                    <WysiwygEditor
                         value={formData.content}
                         onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                         placeholder="Tulis konten tutorial..."
