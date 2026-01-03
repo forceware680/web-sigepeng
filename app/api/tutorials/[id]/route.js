@@ -45,6 +45,8 @@ export async function PUT(request, { params }) {
             media: media,
             order: body.order ?? tutorials[index].order,
             author: body.author ?? tutorials[index].author ?? 'Admin',
+            status: body.status ?? tutorials[index].status ?? 'published',
+            publishedAt: body.publishedAt ?? tutorials[index].publishedAt ?? tutorials[index].createdAt,
             updatedAt: new Date().toISOString()
         };
 

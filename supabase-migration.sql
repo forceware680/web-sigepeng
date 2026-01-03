@@ -107,3 +107,23 @@ CREATE INDEX IF NOT EXISTS idx_tutorials_slug ON tutorials(slug);
 CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_id);
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
 CREATE INDEX IF NOT EXISTS idx_media_tutorial ON tutorial_media(tutorial_id);
+
+-- =============================================
+-- 5. Updates for Draft & Schedule (New)
+-- =============================================
+
+-- Add status and published_at columns if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tutorials' AND column_name = 'status') THEN
+        ALTER TABLE tutorials ADD COLUMN status TEXT DEFAULT 'published';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tutorials' AND column_name = 'published_at') THEN
+        ALTER TABLE tutorials ADD COLUMN published_at TIMESTAMPTZ DEFAULT NOW();
+    END IF;
+END $$;
+
+-- Update existing records to have valid defaults
+UPDATE tutorials SET status = 'published' WHERE status IS NULL;
+UPDATE tutorials SET published_at = created_at WHERE published_at IS NULL;

@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import { readTutorials, writeTutorials } from '@/lib/tutorials';
 
 // GET all tutorials
-export async function GET() {
+export async function GET(request) {
     try {
-        const tutorials = await readTutorials();
+        const { searchParams } = new URL(request.url);
+        const mode = searchParams.get('mode');
+        // If mode is 'admin', show all. Otherwise show only public.
+        const options = {
+            publicOnly: mode !== 'admin'
+        };
+
+        const tutorials = await readTutorials(options);
         const sortedTutorials = tutorials.sort((a, b) => a.order - b.order);
         return NextResponse.json(sortedTutorials);
     } catch (error) {
@@ -43,6 +50,8 @@ export async function POST(request) {
             media: media,
             order: body.order || tutorials.length + 1,
             author: body.author || 'Admin',
+            status: body.status || 'published',
+            publishedAt: body.publishedAt || new Date().toISOString(),
             createdAt: new Date().toISOString()
         };
 

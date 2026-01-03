@@ -33,7 +33,7 @@ export default function AdminDashboard() {
     const fetchData = async () => {
         try {
             const [tutRes, catRes] = await Promise.all([
-                fetch('/api/tutorials'),
+                fetch('/api/tutorials?mode=admin'),
                 fetch('/api/categories')
             ]);
             const tutData = await tutRes.json();
@@ -65,6 +65,15 @@ export default function AdminDashboard() {
         // Legacy format
         if (tutorial.videoId) return '1 video';
         return '-';
+    };
+
+    const getStatusBadge = (tutorial) => {
+        const isPublished = tutorial.status === 'published';
+        const isFuture = new Date(tutorial.publishedAt || tutorial.createdAt) > new Date();
+
+        if (tutorial.status === 'draft') return <span className="badge badge-draft">Draft</span>;
+        if (isPublished && isFuture) return <span className="badge badge-scheduled">Terjadwal</span>;
+        return <span className="badge badge-published">Published</span>;
     };
 
     // Handle select all checkbox
@@ -190,6 +199,7 @@ export default function AdminDashboard() {
                             </th>
                             <th>No</th>
                             <th>Judul</th>
+                            <th>Status</th>
                             <th>Kategori</th>
                             <th>Media</th>
                             <th>Aksi</th>
@@ -210,6 +220,7 @@ export default function AdminDashboard() {
                                 </td>
                                 <td>{index + 1}</td>
                                 <td>{tutorial.title}</td>
+                                <td>{getStatusBadge(tutorial)}</td>
                                 <td>{getCategoryName(tutorial.categoryId)}</td>
                                 <td><code>{getMediaCount(tutorial)}</code></td>
                                 <td className="action-buttons">

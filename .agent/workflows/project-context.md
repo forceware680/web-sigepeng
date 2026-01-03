@@ -308,3 +308,26 @@ POST `/api/admin-users` with:
 - `app/api/upload/route.js` (Switched to Cloudinary)
 - `app/api/gallery/route.js` (New)
 - `app/admin/create/page.js` & `edit/[id]/page.js` (Added gallery picker)
+
+## Recent Changes (Jan 2, 2026 - Session 2)
+
+### Bug Fixes: Cloudinary Gallery 🐛
+**Problem**: Deleted images reappearing as "ghost" broken thumbnails.
+**Solution**:
+- **Consolidated Deletion**: Switched from Upload API to **Admin API** (`delete_resources`) for reliable deletion.
+- **Cache Busting**: Added `timestamp` to frontend fetch and `Cache-Control: no-store` to backend response.
+- **Ghost Filtering**: Added `.filter(img => img.bytes > 0)` in API to strictly remove invalid assets.
+- **Fetch All**: Removed `prefix: 'simaset-wiki/'` restriction to show ALL Cloudinary assets.
+
+### UI Improvements 🎨
+- **Image Resizing**: Added global CSS to ensure all tutorial images (markdown & HTML) fit screen width (`max-width: 100%`).
+- **Clean Previews**: Updated "Related Tutorials" to strip HTML tags (`<img>`) AND custom embed codes (`[IMAGE:...]`) from excerpts.
+- **TipTap Fix**: Resolved "Duplicate extension" warning by configuring StarterKit properly.
+
+### New Feature: Image Zoom 🔍
+**Goal**: Allow users to zoom in on tutorial images.
+- **Component**: Created `components/ZoomableImage.js` (Lightbox modal).
+- **Integration**:
+  - Updated `components/ImageEmbed.js` to use `ZoomableImage`.
+  - Updated `components/MarkdownContent.js` to detect **legacy HTML `<img>` tags** and upgrade them to Zoomable components automatically.
+  - Tutorial content now supports zooming for **both** old (raw HTML) and new (Editor-embedded) images.

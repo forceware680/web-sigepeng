@@ -18,7 +18,9 @@ export default function CreateTutorial() {
         slug: '',
         categoryId: '',
         content: '',
-        order: 1
+        order: 1,
+        status: 'published',
+        publishedAt: new Date().toISOString().slice(0, 16) // Format: YYYY-MM-DDThh:mm
     });
     const [media, setMedia] = useState([]);
     const [showMediaGallery, setShowMediaGallery] = useState(false);
@@ -141,6 +143,40 @@ export default function CreateTutorial() {
             </header>
 
             <form onSubmit={handleSubmit} className="tutorial-form">
+                {/* Publishing Options - Top Bar */}
+                <div className="form-section-card" style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>📅 Opsi Publikasi</h3>
+                    <div className="form-row">
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label htmlFor="status">Status</label>
+                            <select
+                                id="status"
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                                style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
+                            >
+                                <option value="published">Published (Terbit)</option>
+                                <option value="draft">Draft (Konsep)</option>
+                            </select>
+                        </div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label htmlFor="publishedAt">Waktu Terbit</label>
+                            <input
+                                id="publishedAt"
+                                name="publishedAt"
+                                type="datetime-local"
+                                value={formData.publishedAt}
+                                onChange={handleChange}
+                                style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px' }}
+                            />
+                            <small style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                                Jika waktu di masa depan, status akan otomatis menjadi "Terjadwal"
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="form-group">
                     <label htmlFor="title">Judul Tutorial *</label>
                     <input
