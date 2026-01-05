@@ -7,10 +7,12 @@ import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import TiptapImage from '@tiptap/extension-image';
+import TextAlign from '@tiptap/extension-text-align';
 import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
     List, ListOrdered, Code, Link as LinkIcon, Video, Image, Quote,
-    Eye, Code2, Upload, Loader2, FolderOpen, Smile, MousePointerClick
+    Eye, Code2, Upload, Loader2, FolderOpen, Smile, MousePointerClick,
+    AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
 import EmojiPicker from './EmojiPicker';
@@ -154,6 +156,10 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
             TiptapImage.configure({
                 inline: false,
                 allowBase64: true,
+            }),
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+                alignments: ['left', 'center', 'right', 'justify'],
             }),
             Placeholder.configure({
                 placeholder: placeholder,
@@ -544,6 +550,39 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                                 title="Quote"
                             >
                                 <Quote size={16} />
+                            </ToolbarButton>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        <div className="toolbar-group">
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                                isActive={editor?.isActive({ textAlign: 'left' })}
+                                title="Align Left"
+                            >
+                                <AlignLeft size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                                isActive={editor?.isActive({ textAlign: 'center' })}
+                                title="Align Center"
+                            >
+                                <AlignCenter size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                                isActive={editor?.isActive({ textAlign: 'right' })}
+                                title="Align Right"
+                            >
+                                <AlignRight size={16} />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+                                isActive={editor?.isActive({ textAlign: 'justify' })}
+                                title="Justify"
+                            >
+                                <AlignJustify size={16} />
                             </ToolbarButton>
                         </div>
 
