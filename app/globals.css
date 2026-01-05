@@ -71,6 +71,32 @@ body {
   position: fixed;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Modern Scrollbar Styling */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Firefox scrollbar */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) var(--bg-secondary);
 }
 
 .sidebar-header {
@@ -275,6 +301,31 @@ body {
   flex: 1;
   padding: 1rem 0;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Modern Scrollbar for sidebar-nav */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) transparent;
 }
 
 .sidebar-nav ul {
@@ -2239,11 +2290,11 @@ a[data-button]:focus {
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .category-header::before {
-    content: '''';
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
@@ -2260,7 +2311,6 @@ a[data-button]:focus {
 
 .category-header:hover {
     background: var(--bg-tertiary);
-    transform: translateX(2px);
 }
 
 .category-header.expanded {
@@ -2336,6 +2386,10 @@ a[data-button]:focus {
     color: var(--text-primary);
     transition: all 0.3s ease;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .category-header:hover .category-name {
