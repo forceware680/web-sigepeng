@@ -223,6 +223,13 @@ export default function Sidebar() {
             <aside className={`sidebar ${isMobileOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <Link href="/"><h1>📚 SIMASET WIKI</h1></Link>
+                    <button
+                        className="sidebar-close"
+                        onClick={() => setIsMobileOpen(false)}
+                        aria-label="Tutup menu"
+                    >
+                        {getIcon('X', { size: 20 })}
+                    </button>
                 </div>
                 <div className="sidebar-search">
                     <SearchBar />
