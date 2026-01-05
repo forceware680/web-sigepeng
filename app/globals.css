@@ -2221,3 +2221,321 @@ a[data-button]:focus {
         font-size: 1.25rem;
     }
 }
+
+/* ===================================
+   MODERN SIDEBAR EXPAND/COLLAPSE
+   =================================== */
+
+/* Category header improvements */
+.category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.category-header::before {
+    content: '''';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    transition: width 0.3s ease;
+    z-index: 0;
+}
+
+.category-header:hover::before {
+    width: 100%;
+}
+
+.category-header:hover {
+    background: var(--bg-tertiary);
+    transform: translateX(2px);
+}
+
+.category-header.expanded {
+    background: var(--bg-tertiary);
+}
+
+.category-header.has-active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+    border-left: 3px solid var(--accent);
+}
+
+/* Category left section (icon + chevron + name) */
+.category-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+/* Expand icon (chevron) */
+.expand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+}
+
+.expand-icon.expanded {
+    transform: rotate(90deg);
+    background: var(--accent);
+    color: white;
+}
+
+.category-header:hover .expand-icon {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.1);
+}
+
+.category-header:hover .expand-icon.expanded {
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* Category icon */
+.category-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.category-header:hover .category-icon,
+.category-header.expanded .category-icon {
+    color: var(--accent);
+    transform: scale(1.1);
+}
+
+.category-header.has-active .category-icon {
+    color: var(--accent);
+}
+
+/* Category name */
+.category-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.category-header:hover .category-name {
+    color: var(--accent);
+}
+
+/* Item count badge */
+.item-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.category-header:hover .item-count {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.1);
+}
+
+.category-header.expanded .item-count {
+    background: var(--accent);
+    color: white;
+}
+
+/* Submenu wrapper animation */
+.submenu-wrapper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.submenu-wrapper.expanded {
+    max-height: 2000px;
+}
+
+/* Submenu items */
+.submenu {
+    list-style: none;
+    padding: 4px 0;
+    margin: 0;
+}
+
+.submenu li {
+    margin: 2px 0;
+}
+
+.submenu a {
+    display: block;
+    padding: 8px 12px 8px 44px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    position: relative;
+}
+
+.submenu a::before {
+    content: '''';
+    position: absolute;
+    left: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.submenu a:hover {
+    background: var(--bg-tertiary);
+    color: var(--accent);
+    padding-left: 48px;
+}
+
+.submenu a:hover::before {
+    background: var(--accent);
+    transform: translateY(-50%) scale(1.5);
+}
+
+.submenu a.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    color: var(--accent);
+    font-weight: 600;
+    border-left: 3px solid var(--accent);
+    padding-left: 45px;
+}
+
+.submenu a.active::before {
+    background: var(--accent);
+    transform: translateY(-50%) scale(1.5);
+}
+
+/* Mobile improvements */
+@media (max-width: 768px) {
+    .category-header {
+        padding: 12px 16px;
+    }
+    
+    .expand-icon {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .item-count {
+        min-width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .submenu a {
+        padding: 10px 16px 10px 48px;
+        font-size: 15px;
+    }
+    
+    .submenu a:hover {
+        padding-left: 52px;
+    }
+    
+    .submenu a.active {
+        padding-left: 49px;
+    }
+}
+
+/* Loading state */
+.sidebar-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Hamburger button improvements */
+.hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-secondary);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+}
+
+.hamburger-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: scale(1.05);
+}
+
+.hamburger-btn:active {
+    transform: scale(0.95);
+}
+
+/* Sidebar close button improvements */
+.sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-secondary);
+}
+
+.sidebar-close:hover {
+    background: #ff4757;
+    color: white;
+    transform: rotate(90deg) scale(1.1);
+}
+
+.sidebar-close:active {
+    transform: rotate(90deg) scale(0.95);
+}

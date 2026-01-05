@@ -112,18 +112,26 @@ export default function Sidebar() {
         return (
             <div className="menu-category" style={{ marginLeft: depth > 0 ? '12px' : '0' }}>
                 <button
-                    className={`category-header ${hasActiveTutorial || hasActiveDescendant(category) ? 'has-active' : ''}`}
+                    className={`category-header ${hasActiveTutorial || hasActiveDescendant(category) ? 'has-active' : ''} ${isExpanded ? 'expanded' : ''}`}
                     onClick={() => toggleNode(category.id)}
                     aria-expanded={isExpanded}
                     style={{ paddingLeft: depth > 0 ? '8px' : '12px' }}
                 >
-                    <span className="category-icon">
-                        {getIcon(category.icon, { size: 18 - Math.min(depth * 2, 4) })}
-                    </span>
-                    <span className="category-name">{category.name}</span>
+                    <div className="category-left">
+                        {(hasChildren || hasTutorials) && (
+                            <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>
+                                {getIcon('ChevronRight', { size: 16 })}
+                            </span>
+                        )}
+                        <span className="category-icon">
+                            {getIcon(category.icon, { size: 18 - Math.min(depth * 2, 4) })}
+                        </span>
+                        <span className="category-name">{category.name}</span>
+                    </div>
                     {(hasChildren || hasTutorials) && (
-                        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>
-                            {getIcon('ChevronRight', { size: 16 })}
+                        <span className="item-count">
+                            {hasTutorials && categoryTutorials.length}
+                            {hasChildren && !hasTutorials && category.children.length}
                         </span>
                     )}
                 </button>
@@ -215,13 +223,6 @@ export default function Sidebar() {
             <aside className={`sidebar ${isMobileOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <Link href="/"><h1>📚 SIMASET WIKI</h1></Link>
-                    <button
-                        className="sidebar-close"
-                        onClick={() => setIsMobileOpen(false)}
-                        aria-label="Close menu"
-                    >
-                        {getIcon('X', { size: 20 })}
-                    </button>
                 </div>
                 <div className="sidebar-search">
                     <SearchBar />
