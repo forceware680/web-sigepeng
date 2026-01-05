@@ -10,9 +10,10 @@ import TiptapImage from '@tiptap/extension-image';
 import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
     List, ListOrdered, Code, Link as LinkIcon, Video, Image, Quote,
-    Eye, Code2, Upload, Loader2, FolderOpen
+    Eye, Code2, Upload, Loader2, FolderOpen, Smile, MousePointerClick
 } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
+import EmojiPicker from './EmojiPicker';
 
 // Convert Markdown to HTML for loading into TipTap
 const markdownToHtml = (markdown) => {
@@ -130,6 +131,7 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
     const [showGallery, setShowGallery] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
     const bulkFileInputRef = useRef(null);
@@ -236,6 +238,28 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                     insertAtCursor(`[${selectedText}](${url})`);
                 }
             }
+        }
+    };
+
+    // Insert button
+    const handleButtonInsert = () => {
+        const buttonText = prompt('Masukkan text button:', 'Download File');
+        if (!buttonText) return;
+
+        const buttonUrl = prompt('Masukkan URL tujuan (lengkap dengan https://):', 'https://example.com');
+        if (!buttonUrl || buttonUrl === 'https://example.com') {
+            alert('URL tidak boleh kosong!');
+            return;
+        }
+
+        if (mode === 'visual') {
+            // Insert as link with button styling in visual mode
+            const buttonHtml = `<p><a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" class="content-button" data-button>${buttonText}</a></p>`;
+            editor?.commands.insertContent(buttonHtml);
+        } else {
+            // Insert as link with button styling in source mode
+            const buttonHtml = `<a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" class="content-button" data-button>${buttonText}</a>`;
+            insertAtCursor(`\n${buttonHtml}\n`);
         }
     };
 
@@ -421,6 +445,15 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
         }
     };
 
+    // Handle emoji selection
+    const handleEmojiSelect = (emoji) => {
+        if (mode === 'visual') {
+            editor?.commands.insertContent(emoji);
+        } else {
+            insertAtCursor(emoji);
+        }
+    };
+
     if (!editor && mode === 'visual') {
         return <div className="editor-loading">Loading editor...</div>;
     }
@@ -523,6 +556,9 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                     <ToolbarButton onClick={handleLink} title="Insert Link">
                         <LinkIcon size={16} />
                     </ToolbarButton>
+                    <ToolbarButton onClick={handleButtonInsert} title="Insert Button">
+                        <MousePointerClick size={16} />
+                    </ToolbarButton>
                     <ToolbarButton onClick={handleVideoEmbed} title="Embed Video">
                         <Video size={16} />
                     </ToolbarButton>
@@ -551,6 +587,12 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                         title="Gallery Gambar Cloudinary"
                     >
                         <FolderOpen size={16} />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        onClick={() => setShowEmojiPicker(true)}
+                        title="Insert Emoji"
+                    >
+                        <Smile size={16} />
                     </ToolbarButton>
                     {/* Hidden file input for upload (supports multiple) */}
                     <input
@@ -596,6 +638,13 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                 isOpen={showGallery}
                 onClose={() => setShowGallery(false)}
                 onSelect={handleGallerySelect}
+            />
+
+            {/* Emoji Picker Modal */}
+            <EmojiPicker
+                isOpen={showEmojiPicker}
+                onClose={() => setShowEmojiPicker(false)}
+                onSelect={handleEmojiSelect}
             />
         </div>
     );
