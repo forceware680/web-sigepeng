@@ -2644,9 +2644,9 @@ a[data-button]:focus {
   transform: scale(0.95);
 }
 
-/* Sidebar close button improvements */
+/* Sidebar close button improvements - hidden by default, visible on mobile */
 .sidebar-close {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   width: 36px;
