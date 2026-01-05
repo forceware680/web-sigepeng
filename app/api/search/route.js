@@ -100,21 +100,53 @@ export async function GET(request) {
     }
 }
 
+// Helper to strip HTML tags and markdown codes
+function stripMarkdownAndHtml(text) {
+    if (!text) return '';
+
+    return text
+        // Remove HTML tags
+        .replace(/<[^>]*>/g, '')
+        // Remove [VIDEO:...] embeds
+        .replace(/\[VIDEO:[^\]]*\]/g, '')
+        // Remove [IMAGE:...] embeds
+        .replace(/\[IMAGE:[^\]]*\]/g, '')
+        // Remove markdown links [text](url)
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        // Remove markdown images ![alt](url)
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+        // Remove markdown bold/italic **text** or *text*
+        .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
+        // Remove markdown headers #
+        .replace(/^#{1,6}\s+/gm, '')
+        // Remove blockquote >
+        .replace(/^>\s*/gm, '')
+        // Remove code blocks ```
+        .replace(/```[\s\S]*?```/g, '')
+        // Remove inline code `code`
+        .replace(/`([^`]+)`/g, '$1')
+        // Remove extra whitespace
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 // Helper to get excerpt around the matched query
 function getExcerpt(content, query) {
     if (!content) return '';
 
-    const lowerContent = content.toLowerCase();
+    // Clean the content first
+    const cleanContent = stripMarkdownAndHtml(content);
+    const lowerContent = cleanContent.toLowerCase();
     const index = lowerContent.indexOf(query);
 
-    if (index === -1) return content.substring(0, 100) + '...';
+    if (index === -1) return cleanContent.substring(0, 100) + '...';
 
     const start = Math.max(0, index - 40);
-    const end = Math.min(content.length, index + query.length + 60);
+    const end = Math.min(cleanContent.length, index + query.length + 60);
 
-    let excerpt = content.substring(start, end);
+    let excerpt = cleanContent.substring(start, end);
     if (start > 0) excerpt = '...' + excerpt;
-    if (end < content.length) excerpt = excerpt + '...';
+    if (end < cleanContent.length) excerpt = excerpt + '...';
 
     return excerpt;
 }
