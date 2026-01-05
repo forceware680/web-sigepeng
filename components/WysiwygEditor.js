@@ -252,9 +252,31 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
         const buttonText = prompt('Masukkan text button:', 'Download File');
         if (!buttonText) return;
 
-        const buttonUrl = prompt('Masukkan URL tujuan (lengkap dengan https://):', 'https://example.com');
+        let buttonUrl = prompt('Masukkan URL tujuan (lengkap dengan https://):', 'https://example.com');
         if (!buttonUrl || buttonUrl === 'https://example.com') {
             alert('URL tidak boleh kosong!');
+            return;
+        }
+
+        // Validate and fix URL - ensure it has protocol
+        buttonUrl = buttonUrl.trim();
+        
+        // If URL doesn't start with http:// or https://, add https://
+        if (!buttonUrl.match(/^https?:\/\//i)) {
+            // Check if it looks like a URL (has domain pattern)
+            if (buttonUrl.includes('.') || buttonUrl.includes('://')) {
+                buttonUrl = 'https://' + buttonUrl.replace(/^:\/\//, '');
+            } else {
+                alert('⚠️ URL tidak valid! Pastikan URL lengkap dengan https://\n\nContoh yang benar:\n✅ https://example.com/file.pdf\n✅ https://drive.google.com/file/xxx\n\n❌ example.com/file.pdf\n❌ c:/folder/file.pdf');
+                return;
+            }
+        }
+
+        // Additional validation - check if URL is valid
+        try {
+            new URL(buttonUrl);
+        } catch (e) {
+            alert('⚠️ URL tidak valid! Pastikan format URL benar.\n\nContoh: https://example.com/file.pdf');
             return;
         }
 
