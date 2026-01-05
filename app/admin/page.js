@@ -4,7 +4,10 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Search, X, Eye } from 'lucide-react';
+import MarkdownContent from '@/components/MarkdownContent';
+import YouTubeEmbed from '@/components/YouTubeEmbed';
+import ImageEmbed from '@/components/ImageEmbed';
 
 export default function AdminDashboard() {
     const { data: session, status } = useSession();
@@ -14,6 +17,9 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleting, setDeleting] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [previewTutorial, setPreviewTutorial] = useState(null);
+    const [showPreview, setShowPreview] = useState(false);
 
     useEffect(() => {
         // Only redirect after loading is complete and confirmed unauthenticated
@@ -134,6 +140,36 @@ export default function AdminDashboard() {
         }
     };
 
+    // Filter tutorials based on search query
+    const filteredTutorials = tutorials.filter(tutorial => {
+        if (!searchQuery.trim()) return true;
+        
+        const query = searchQuery.toLowerCase();
+        const title = tutorial.title?.toLowerCase() || '';
+        const content = tutorial.content?.toLowerCase() || '';
+        const categoryName = getCategoryName(tutorial.categoryId).toLowerCase();
+        
+        return title.includes(query) || 
+               content.includes(query) || 
+               categoryName.includes(query);
+    });
+
+    // Handle preview
+    const handlePreview = (tutorial) => {
+        setPreviewTutorial(tutorial);
+        setShowPreview(true);
+    };
+
+    const closePreview = () => {
+        setShowPreview(false);
+        setPreviewTutorial(null);
+    };
+
+    // Clear search
+    const clearSearch = () => {
+        setSearchQuery('');
+    };
+
     if (status === 'loading' || loading) {
         return <div className="admin-loading">Loading...</div>;
     }
@@ -182,6 +218,34 @@ export default function AdminDashboard() {
                 )}
             </div>
 
+            {/* Search Bar */}
+            <div className="search-container">
+                <div className="search-input-wrapper">
+                    <Search className="search-icon" size={20} />
+                    <input
+                        type="text"
+                        className="search-input"
+                        placeholder="Cari tutorial berdasarkan judul, kategori, atau konten..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                        <button 
+                            className="search-clear"
+                            onClick={clearSearch}
+                            title="Clear search"
+                        >
+                            <X size={18} />
+                        </button>
+                    )}
+                </div>
+                {searchQuery && (
+                    <div className="search-results-info">
+                        Ditemukan {filteredTutorials.length} dari {tutorials.length} tutorial
+                    </div>
+                )}
+            </div>
+
             <div className="admin-table-container">
                 <table className="admin-table">
                     <thead>
@@ -206,7 +270,7 @@ export default function AdminDashboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {tutorials.map((tutorial, index) => (
+                        {filteredTutorials.map((tutorial, index) => (
                             <tr
                                 key={tutorial.id}
                                 className={selectedIds.includes(tutorial.id) ? 'selected' : ''}
@@ -224,6 +288,13 @@ export default function AdminDashboard() {
                                 <td>{getCategoryName(tutorial.categoryId)}</td>
                                 <td><code>{getMediaCount(tutorial)}</code></td>
                                 <td className="action-buttons">
+                                    <button 
+                                        onClick={() => handlePreview(tutorial)} 
+                                        className="btn-preview"
+                                        title="Preview"
+                                    >
+                                        <Eye size={16} /> Preview
+                                    </button>
                                     <Link href={`/admin/edit/${tutorial.id}`} className="btn-edit">
                                         ✏️ Edit
                                     </Link>
@@ -236,12 +307,115 @@ export default function AdminDashboard() {
                     </tbody>
                 </table>
 
+                {filteredTutorials.length === 0 && tutorials.length > 0 && (
+                    <div className="empty-state">
+                        <p>Tidak ada tutorial yang cocok dengan pencarian "{searchQuery}"</p>
+                    </div>
+                )}
+
                 {tutorials.length === 0 && (
                     <div className="empty-state">
                         <p>Belum ada tutorial. Klik tombol di atas untuk menambah.</p>
                     </div>
                 )}
             </div>
+
+            {/* Preview Modal */}
+            {showPreview && previewTutorial && (
+                <div className="preview-modal-overlay" onClick={closePreview}>
+                    <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="preview-header">
+                            <div className="preview-header-left">
+                                <h2>{previewTutorial.title}</h2>
+                                <div className="preview-meta">
+                                    {getStatusBadge(previewTutorial)}
+                                    <span className="preview-category">
+                                        📁 {getCategoryName(previewTutorial.categoryId)}
+                                    </span>
+                                    {previewTutorial.author && (
+                                        <span className="preview-author">
+                                            ✍️ {previewTutorial.author}
+                                        </span>
+                                    )}
+                                    {previewTutorial.views > 0 && (
+                                        <span className="preview-views">
+                                            👁️ {previewTutorial.views} views
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <button 
+                                className="preview-close"
+                                onClick={closePreview}
+                                title="Close"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="preview-content">
+                            {/* Media Section */}
+                            {previewTutorial.media && previewTutorial.media.length > 0 && (
+                                <div className="preview-media-section">
+                                    {previewTutorial.media.map((media, idx) => (
+                                        <div key={media.id || idx} className="preview-media-item">
+                                            {media.type === 'video' && media.videoId && (
+                                                <div className="preview-video">
+                                                    <YouTubeEmbed 
+                                                        videoId={media.videoId} 
+                                                        title={media.title || 'Tutorial Video'} 
+                                                    />
+                                                    {media.title && (
+                                                        <p className="media-title">{media.title}</p>
+                                                    )}
+                                                    {media.caption && (
+                                                        <p className="media-caption">{media.caption}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {media.type === 'image' && media.url && (
+                                                <div className="preview-image">
+                                                    <ImageEmbed
+                                                        url={media.url}
+                                                        title={media.title}
+                                                        caption={media.caption}
+                                                        alt={media.title || 'Tutorial Image'}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Content Section */}
+                            {previewTutorial.content && (
+                                <div className="preview-text-content">
+                                    <MarkdownContent content={previewTutorial.content} />
+                                </div>
+                            )}
+
+                            {!previewTutorial.content && (!previewTutorial.media || previewTutorial.media.length === 0) && (
+                                <div className="preview-empty">
+                                    <p>Tutorial ini belum memiliki konten.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="preview-footer">
+                            <button className="btn-secondary" onClick={closePreview}>
+                                Tutup
+                            </button>
+                            <Link 
+                                href={`/admin/edit/${previewTutorial.id}`} 
+                                className="btn-primary"
+                            >
+                                ✏️ Edit Tutorial
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
