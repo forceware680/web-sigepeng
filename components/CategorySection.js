@@ -67,20 +67,15 @@ export default function CategorySection({ postsPerCategory = 2 }) {
         <section className="category-section">
             {categoriesWithPosts.map(category => (
                 <div key={category.id} className="category-group">
-                    <div className="category-header">
-                        <div className="category-title">
+                    <div className="category-group-header">
+                        <Link href={`/category/${category.slug}`} className="category-title-link">
                             <Folder size={20} />
                             <h2>{category.name}</h2>
                             <span className="category-count">
                                 {category.totalPosts} tutorial
                             </span>
-                        </div>
-                        {category.totalPosts > postsPerCategory && (
-                            <Link href={`/?category=${category.slug}`} className="view-all-link">
-                                Lihat Semua
-                                <ChevronRight size={16} />
-                            </Link>
-                        )}
+                            <ChevronRight size={18} className="category-arrow" />
+                        </Link>
                     </div>
                     <div className="category-posts-grid">
                         {category.posts.map(post => (
