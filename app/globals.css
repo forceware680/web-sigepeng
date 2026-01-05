@@ -2530,18 +2530,26 @@ a[data-button]:focus {
 
 /* Mobile improvements */
 @media (max-width: 768px) {
+
+  /* Ensure category header stays horizontal, not stacking */
   .category-header {
-    padding: 14px 16px;
-    min-height: 56px;
+    padding: 12px 16px;
+    min-height: 48px;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
   }
 
   .category-left {
-    gap: 12px;
+    gap: 10px;
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left;
   }
 
   .expand-icon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
   }
 
@@ -2550,36 +2558,46 @@ a[data-button]:focus {
   }
 
   .category-name {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.4;
+    text-align: left;
   }
 
+  /* Item count stays inline, not below */
   .item-count {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 10px;
-    font-size: 13px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   .submenu a {
-    padding: 12px 16px 12px 56px;
-    font-size: 15px;
-    min-height: 48px;
+    padding: 10px 16px 10px 48px;
+    font-size: 14px;
+    min-height: 44px;
     display: flex;
     align-items: center;
+    text-align: left;
   }
 
   .submenu a::before {
-    left: 40px;
+    left: 32px;
   }
 
   .submenu a:hover {
-    padding-left: 60px;
+    padding-left: 52px;
   }
 
   .submenu a.active {
-    padding-left: 57px;
+    padding-left: 49px;
+  }
+
+  /* Menu category container */
+  .menu-category {
+    margin: 0;
+    padding: 0;
   }
 }
 
