@@ -787,6 +787,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -811,6 +812,7 @@
         transform: translateY(20px);
         opacity: 0;
     }
+
     to {
         transform: translateY(0);
         opacity: 1;
@@ -1407,24 +1409,152 @@
     color: var(--accent-hover);
 }
 
-/* Images in editor */
+/* Images in editor - with hover edit caption hint */
+.editor-visual-container {
+    position: relative;
+}
+
 .tiptap-content .tiptap img {
     max-width: 100%;
     height: auto;
     border-radius: 8px;
     margin: 1rem 0;
     cursor: pointer;
-    transition: outline 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
 .tiptap-content .tiptap img:hover {
-    outline: 2px solid var(--accent);
+    outline: 3px solid var(--accent);
     outline-offset: 2px;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+.tiptap-content .tiptap img::after {
+    content: '✏️ Edit Caption';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.tiptap-content .tiptap img:hover::after {
+    opacity: 1;
 }
 
 .tiptap-content .tiptap img.ProseMirror-selectednode {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
+}
+
+/* Image Caption Edit Modal */
+.image-caption-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+    backdrop-filter: blur(4px);
+}
+
+.image-caption-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.2s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.image-caption-preview {
+    background: var(--bg-primary);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border-color);
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.image-caption-preview img {
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.image-caption-form {
+    padding: 1.5rem;
+}
+
+.image-caption-form label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.image-caption-form input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.image-caption-form input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.image-caption-form input::placeholder {
+    color: var(--text-secondary);
+}
+
+.image-caption-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+.image-caption-actions button {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.9rem;
 }
 
 /* Source Mode - Specific styling */
@@ -1463,6 +1593,7 @@
 }
 
 .gallery-modal {
+    position: relative;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 16px;
@@ -1511,6 +1642,97 @@
 .gallery-header .btn-close:hover {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
+}
+
+/* Gallery Header Actions */
+.gallery-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+    margin-right: 1rem;
+}
+
+.btn-upload-gallery {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-upload-gallery:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-upload-gallery:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-upload-gallery .spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Paste Hint Bar */
+.gallery-paste-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.gallery-paste-hint kbd {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+    color: var(--text-primary);
+}
+
+/* Drag Overlay */
+.gallery-drag-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(99, 102, 241, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 10;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 16px;
+}
+
+.gallery-drag-overlay svg {
+    opacity: 0.9;
+}
+
+.gallery-modal.dragging {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
 }
 
 .gallery-content {

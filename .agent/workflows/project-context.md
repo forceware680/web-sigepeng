@@ -331,3 +331,94 @@ POST `/api/admin-users` with:
   - Updated `components/ImageEmbed.js` to use `ZoomableImage`.
   - Updated `components/MarkdownContent.js` to detect **legacy HTML `<img>` tags** and upgrade them to Zoomable components automatically.
   - Tutorial content now supports zooming for **both** old (raw HTML) and new (Editor-embedded) images.
+
+## Recent Changes (Jan 5, 2026) 📱
+
+### Mobile Sidebar Improvements
+**Problem**: Tampilan sidebar di mobile terlihat jelek - menu items tidak rata dan layout berantakan.
+
+**Solution**:
+1. **Mobile Header Bar** (`globals.css`)
+   - Fixed header 60px dengan logo dan hamburger menu
+   - Backdrop blur effect untuk tampilan modern
+
+2. **Sidebar Overlay** 
+   - Background semi-transparan dengan blur effect
+   - Klik overlay untuk menutup sidebar
+
+3. **Slide Animation**
+   - Transform translateX untuk animasi smooth dari kiri
+   - Cubic-bezier easing untuk gerakan natural
+
+4. **Close Button** (`Sidebar.js`)
+   - Tombol X di header sidebar
+   - Hanya tampil di mobile (hidden di desktop via CSS)
+
+5. **Horizontal Alignment Fix**
+   - `flex-direction: row !important` untuk mencegah item stacking
+   - `flex-wrap: nowrap !important` agar item count tetap inline
+   - `text-align: left` untuk semua text
+
+**Files Modified**:
+- `app/globals.css` - Mobile header, overlay, sidebar animations, responsive breakpoints
+- `components/Sidebar.js` - Added close button
+
+---
+
+### Category Page Feature 📁
+**Goal**: Membuat kategori di homepage bisa diklik dan menampilkan semua tutorial dalam kategori tersebut.
+
+**Implementation**:
+1. **New Route**: `/category/[slug]`
+   - Dynamic page untuk menampilkan semua tutorial per kategori
+   - Header dengan nama kategori dan jumlah tutorial
+   - Grid layout untuk tutorial cards
+   - Back link untuk kembali ke homepage
+
+2. **Clickable Category Titles**
+   - Mengubah CategorySection.js agar title kategori jadi link
+   - Hover effect dengan arrow animation
+   - Link ke `/category/[slug]`
+
+**Files Added**:
+- `app/category/[slug]/page.js` - Category page component
+
+**Files Modified**:
+- `components/CategorySection.js` - Clickable category title links
+- `app/globals.css` - Category page styling, category-title-link styling
+
+---
+
+### Search Excerpt Cleanup 🔍
+**Problem**: Hasil pencarian menampilkan kode HTML/markdown mentah di excerpt.
+
+**Solution**:
+- Menambahkan fungsi `stripMarkdownAndHtml()` di `/api/search/route.js`
+- Membersihkan: HTML tags, [VIDEO:...], [IMAGE:...], markdown links, bold/italic, headers, blockquotes, code blocks
+
+**Files Modified**:
+- `app/api/search/route.js` - Added stripMarkdownAndHtml function, updated getExcerpt
+
+---
+
+## Project Structure (Updated)
+```
+app/
+├── category/[slug]/      # NEW: Category page
+├── tutorial/[slug]/      # Tutorial page
+├── admin/               # Admin CMS
+└── api/
+    ├── search/          # Search API (updated)
+    └── ...
+
+components/
+├── Sidebar.js           # Updated: close button for mobile
+├── CategorySection.js   # Updated: clickable category titles
+└── ...
+```
+
+## Deployment Notes
+- Semua perubahan sudah dibuat di lokal
+- Jalankan `git push` untuk deploy otomatis ke Vercel
+- Test di device mobile setelah deployment
+

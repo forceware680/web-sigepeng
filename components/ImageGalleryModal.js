@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Loader2, Trash2, Check, ImageIcon, ZoomIn } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Loader2, Trash2, Check, ImageIcon, ZoomIn, Upload, Clipboard } from 'lucide-react';
 
 export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
     const [images, setImages] = useState([]);
@@ -10,6 +10,11 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
     const [selectedImage, setSelectedImage] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [deleting, setDeleting] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef(null);
+    const modalRef = useRef(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -17,6 +22,30 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
             setSelectedImage(null);
             setPreviewImage(null);
         }
+    }, [isOpen]);
+
+    // Handle clipboard paste (Ctrl+V)
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handlePaste = async (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) {
+                        await uploadImage(file);
+                    }
+                    break;
+                }
+            }
+        };
+
+        document.addEventListener('paste', handlePaste);
+        return () => document.removeEventListener('paste', handlePaste);
     }, [isOpen]);
 
     const fetchImages = async () => {
@@ -35,6 +64,93 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const uploadImage = async (file) => {
+        if (!file.type.startsWith('image/')) {
+            alert('File harus berupa gambar');
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Ukuran file maksimal 10MB');
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress('Mengupload...');
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Upload gagal');
+            }
+
+            setUploadProgress('Berhasil!');
+
+            // Refresh gallery to show new image
+            await fetchImages();
+
+            // Auto-select the newly uploaded image
+            setTimeout(() => {
+                setUploadProgress('');
+            }, 1500);
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('❌ Gagal upload: ' + error.message);
+            setUploadProgress('');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleFileSelect = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        for (const file of files) {
+            await uploadImage(file);
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = Array.from(e.dataTransfer.files || []);
+        for (const file of files) {
+            if (file.type.startsWith('image/')) {
+                await uploadImage(file);
+            }
         }
     };
 
@@ -94,13 +210,57 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
 
     return (
         <div className="gallery-modal-overlay" onClick={onClose}>
-            <div className="gallery-modal gallery-modal-with-preview" onClick={e => e.stopPropagation()}>
+            <div
+                className={`gallery-modal gallery-modal-with-preview ${isDragging ? 'dragging' : ''}`}
+                onClick={e => e.stopPropagation()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                ref={modalRef}
+            >
                 <div className="gallery-header">
                     <h2><ImageIcon size={20} /> Gallery Gambar</h2>
+                    <div className="gallery-header-actions">
+                        {/* Upload Button */}
+                        <button
+                            className="btn-upload-gallery"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            title="Upload gambar baru"
+                        >
+                            {uploading ? (
+                                <><Loader2 size={16} className="spin" /> {uploadProgress}</>
+                            ) : (
+                                <><Upload size={16} /> Upload</>
+                            )}
+                        </button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
+                            accept="image/*"
+                            multiple
+                            style={{ display: 'none' }}
+                        />
+                    </div>
                     <button className="btn-close" onClick={onClose}>
                         <X size={20} />
                     </button>
                 </div>
+
+                {/* Paste hint */}
+                <div className="gallery-paste-hint">
+                    <Clipboard size={14} />
+                    <span>Tip: Tekan <kbd>Ctrl</kbd>+<kbd>V</kbd> untuk paste gambar dari clipboard</span>
+                </div>
+
+                {/* Drag overlay */}
+                {isDragging && (
+                    <div className="gallery-drag-overlay">
+                        <Upload size={48} />
+                        <p>Drop gambar di sini untuk upload</p>
+                    </div>
+                )}
 
                 <div className="gallery-body">
                     {/* Left side - Grid */}
@@ -119,7 +279,13 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                             <div className="gallery-empty">
                                 <ImageIcon size={48} />
                                 <p>Belum ada gambar di gallery.</p>
-                                <p>Upload gambar menggunakan tombol Upload di editor.</p>
+                                <p>Klik tombol Upload atau paste gambar (Ctrl+V)</p>
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <Upload size={16} /> Upload Gambar
+                                </button>
                             </div>
                         ) : (
                             <div className="gallery-grid">
@@ -225,3 +391,4 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
         </div>
     );
 }
+

@@ -26,70 +26,136 @@ const markdownToHtml = (markdown) => {
         return markdown;
     }
 
-    return markdown
+    let result = markdown;
+
+    // Process ordered lists (numbered: 1. 2. 3.) - group consecutive lines
+    result = result.replace(/^(\d+\. .+(?:\n\d+\. .+)*)/gm, (match) => {
+        const items = match.split('\n').map(line => {
+            const text = line.replace(/^\d+\. /, '').trim();
+            return `<li><p>${text}</p></li>`;
+        }).join('');
+        return `<ol>${items}</ol>`;
+    });
+
+    // Process unordered lists (bullet: - item) - group consecutive lines
+    result = result.replace(/^(- .+(?:\n- .+)*)/gm, (match) => {
+        const items = match.split('\n').map(line => {
+            const text = line.replace(/^- /, '').trim();
+            return `<li><p>${text}</p></li>`;
+        }).join('');
+        return `<ul>${items}</ul>`;
+    });
+
+    return result
+        // Custom BUTTON syntax: [BUTTON:text](url) - restore button styling
+        .replace(/\[BUTTON:([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="content-button" data-button>$1</a>')
+        // Custom IMAGE syntax: [IMAGE:url|caption] or [IMAGE:url]
+        .replace(/\[IMAGE:([^\]|]+)\|([^\]]*)\]/g, '<img src="$1" alt="$2" title="$2" />')
+        .replace(/\[IMAGE:([^\]]+)\]/g, '<img src="$1" alt="" />')
+        // Custom VIDEO syntax: [VIDEO:id]
+        .replace(/\[VIDEO:([^\]]+)\]/g, '<p>[VIDEO:$1]</p>')
         // Headers
-        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
         // Bold
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Italic
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Italic (single asterisk, not part of bold)
+        .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>')
         // Code blocks
         .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
         // Inline code
-        .replace(/`(.*?)`/g, '<code>$1</code>')
-        // Links
-        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Regular links (not BUTTON/IMAGE/VIDEO - already processed)
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
         // Blockquote
-        .replace(/^> (.*$)/gim, '<blockquote><p>$1</p></blockquote>')
-        // Unordered lists
-        .replace(/^\- (.*$)/gim, '<li>$1</li>')
-        // Ordered lists
-        .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
-        // Paragraphs (double newline)
-        .replace(/\n\n/g, '</p><p>')
-        // Line breaks
-        .replace(/\n/g, '<br />');
+        .replace(/^> (.+)$/gm, '<blockquote><p>$1</p></blockquote>')
+        // Wrap text lines in paragraphs (lines not already wrapped in tags)
+        .replace(/^(?!<[a-z]|$)(.+)$/gm, '<p>$1</p>')
+        // Clean up empty lines and normalize
+        .replace(/\n+/g, '')
+        .replace(/<\/p><p>/g, '</p>\n<p>');
 };
 
 // Convert HTML back to Markdown for source mode
 const htmlToMarkdown = (html) => {
     if (!html) return '';
 
-    return html
+    let result = html;
+
+    // First, normalize all whitespace between tags
+    result = result.replace(/>\s+</g, '><');
+
+    // Strip <p> tags inside <li> tags (TipTap wraps li content in p)
+    result = result.replace(/<li[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>');
+
+    // IMPORTANT: Handle buttons BEFORE regular links (buttons have class="content-button" or data-button)
+    result = result.replace(/<a[^>]*class="[^"]*content-button[^"]*"[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
+    result = result.replace(/<a[^>]*href="([^"]*)"[^>]*class="[^"]*content-button[^"]*"[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
+    result = result.replace(/<a[^>]*data-button[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
+    result = result.replace(/<a[^>]*href="([^"]*)"[^>]*data-button[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
+
+    // Process ordered lists - convert to numbered format
+    result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+        let counter = 1;
+        const items = [];
+        content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
+            const cleanText = text.replace(/<[^>]*>/g, '').trim();
+            if (cleanText) items.push(`${counter++}. ${cleanText}`);
+            return '';
+        });
+        return items.length > 0 ? items.join('\n') + '\n' : '';
+    });
+
+    // Process unordered lists - convert to bullet format
+    result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+        const items = [];
+        content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
+            const cleanText = text.replace(/<[^>]*>/g, '').trim();
+            if (cleanText) items.push(`- ${cleanText}`);
+            return '';
+        });
+        return items.length > 0 ? items.join('\n') + '\n' : '';
+    });
+
+    return result
         // Headers
-        .replace(/<h1>(.*?)<\/h1>/gi, '# $1\n')
-        .replace(/<h2>(.*?)<\/h2>/gi, '## $1\n')
-        .replace(/<h3>(.*?)<\/h3>/gi, '### $1\n')
+        .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
+        .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n')
+        .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n')
         // Bold
         .replace(/<strong>(.*?)<\/strong>/gi, '**$1**')
         .replace(/<b>(.*?)<\/b>/gi, '**$1**')
         // Italic
         .replace(/<em>(.*?)<\/em>/gi, '*$1*')
         .replace(/<i>(.*?)<\/i>/gi, '*$1*')
-        // Underline (keep as HTML since markdown doesn't support)
+        // Underline (keep as HTML)
         .replace(/<u>(.*?)<\/u>/gi, '<u>$1</u>')
         // Code
-        .replace(/<code>(.*?)<\/code>/gi, '`$1`')
         .replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```')
-        // Links
-        .replace(/<a href="(.*?)">(.*?)<\/a>/gi, '[$2]($1)')
-        // Images (convert to custom IMAGE syntax)
-        .replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '[IMAGE:$1|$2]')
-        .replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, '[IMAGE:$1]')
+        .replace(/<code>(.*?)<\/code>/gi, '`$1`')
+        // Regular links (not buttons - already processed above)
+        .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+        // Images
+        .replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, '[IMAGE:$1|$2]')
+        .replace(/<img[^>]*src="([^"]*)"[^>]*\/?>/gi, '[IMAGE:$1]')
         // Blockquote
-        .replace(/<blockquote><p>(.*?)<\/p><\/blockquote>/gi, '> $1\n')
-        .replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n')
-        // Lists
-        .replace(/<li>(.*?)<\/li>/gi, '- $1\n')
-        .replace(/<ul>|<\/ul>|<ol>|<\/ol>/gi, '')
-        // Paragraphs
-        .replace(/<p>(.*?)<\/p>/gi, '$1\n\n')
+        .replace(/<blockquote[^>]*><p>(.*?)<\/p><\/blockquote>/gi, '> $1\n')
+        .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n')
+        // Empty paragraphs - remove completely
+        .replace(/<p[^>]*>\s*<\/p>/gi, '')
+        // Paragraphs with content
+        .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1\n')
         // Line breaks
         .replace(/<br\s*\/?>/gi, '\n')
-        // Clean up extra whitespace
-        .replace(/\n\n\n+/g, '\n\n')
+        // Clean remaining HTML tags
+        .replace(/<\/?[^>]+(>|$)/g, '')
+        // Normalize multiple newlines to max 2
+        .replace(/\n{3,}/g, '\n\n')
+        // Remove leading/trailing whitespace on each line
+        .split('\n').map(line => line.trim()).join('\n')
+        // Final cleanup
+        .replace(/\n{3,}/g, '\n\n')
         .trim();
 };
 
@@ -134,9 +200,12 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
     const [showGallery, setShowGallery] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [editingImage, setEditingImage] = useState(null); // { src, alt, node, pos }
+    const [captionInput, setCaptionInput] = useState('');
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
     const bulkFileInputRef = useRef(null);
+    const editorContainerRef = useRef(null);
 
     // TipTap Editor
     const editor = useEditor({
@@ -192,6 +261,79 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
         setMode(newMode);
     }, [mode, editor, sourceContent]);
+
+    // Handle clicks on images in the editor for caption editing
+    useEffect(() => {
+        if (!editor || mode !== 'visual') return;
+
+        const handleEditorClick = (event) => {
+            const target = event.target;
+            if (target.tagName === 'IMG') {
+                event.preventDefault();
+                event.stopPropagation();
+
+                // Get the image position in the document
+                const { state } = editor;
+                let imagePos = null;
+                state.doc.descendants((node, pos) => {
+                    if (node.type.name === 'image' && node.attrs.src === target.src) {
+                        imagePos = pos;
+                        return false;
+                    }
+                });
+
+                setEditingImage({
+                    src: target.src,
+                    alt: target.alt || '',
+                    title: target.title || '',
+                    pos: imagePos
+                });
+                setCaptionInput(target.alt || target.title || '');
+            }
+        };
+
+        const editorElement = editorContainerRef.current?.querySelector('.tiptap');
+        if (editorElement) {
+            editorElement.addEventListener('click', handleEditorClick);
+            return () => editorElement.removeEventListener('click', handleEditorClick);
+        }
+    }, [editor, mode]);
+
+    // Save image caption
+    const handleSaveCaption = () => {
+        if (!editor || editingImage === null) return;
+
+        const { state, view } = editor;
+        let updated = false;
+
+        state.doc.descendants((node, pos) => {
+            if (node.type.name === 'image' && node.attrs.src === editingImage.src) {
+                const transaction = state.tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    alt: captionInput,
+                    title: captionInput
+                });
+                view.dispatch(transaction);
+                updated = true;
+                return false;
+            }
+        });
+
+        if (updated) {
+            // Trigger content update
+            const html = editor.getHTML();
+            onChange(html);
+        }
+
+        setEditingImage(null);
+        setCaptionInput('');
+    };
+
+    // Cancel image caption editing
+    const handleCancelCaption = () => {
+        setEditingImage(null);
+        setCaptionInput('');
+    };
 
     // Handle source mode changes
     const handleSourceChange = (e) => {
@@ -260,7 +402,7 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
         // Validate and fix URL - ensure it has protocol
         buttonUrl = buttonUrl.trim();
-        
+
         // If URL doesn't start with http:// or https://, add https://
         if (!buttonUrl.match(/^https?:\/\//i)) {
             // Check if it looks like a URL (has domain pattern)
@@ -674,7 +816,9 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
             {/* Editor Content */}
             {mode === 'visual' ? (
-                <EditorContent editor={editor} className="tiptap-content" />
+                <div ref={editorContainerRef} className="editor-visual-container">
+                    <EditorContent editor={editor} className="tiptap-content" />
+                </div>
             ) : (
                 <textarea
                     ref={textareaRef}
@@ -688,7 +832,7 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
             <div className="editor-help">
                 {mode === 'visual' ? (
-                    <span>💡 Mode Visual: Formatting langsung terlihat. Switch ke Source untuk edit markdown.</span>
+                    <span>💡 Mode Visual: Klik gambar untuk edit caption. Switch ke Source untuk edit markdown.</span>
                 ) : (
                     <span>💡 Mode Source: Edit kode markdown. Gunakan <code>[VIDEO:id]</code> dan <code>[IMAGE:url|caption]</code> untuk embed.</span>
                 )}
@@ -707,6 +851,40 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                 onClose={() => setShowEmojiPicker(false)}
                 onSelect={handleEmojiSelect}
             />
+
+            {/* Image Caption Edit Modal */}
+            {editingImage && (
+                <div className="image-caption-modal-overlay" onClick={handleCancelCaption}>
+                    <div className="image-caption-modal" onClick={e => e.stopPropagation()}>
+                        <div className="image-caption-preview">
+                            <img src={editingImage.src} alt="" />
+                        </div>
+                        <div className="image-caption-form">
+                            <label htmlFor="caption-input">Caption / Alt Text:</label>
+                            <input
+                                id="caption-input"
+                                type="text"
+                                value={captionInput}
+                                onChange={(e) => setCaptionInput(e.target.value)}
+                                placeholder="Masukkan caption gambar..."
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveCaption();
+                                    if (e.key === 'Escape') handleCancelCaption();
+                                }}
+                            />
+                            <div className="image-caption-actions">
+                                <button type="button" className="btn-secondary" onClick={handleCancelCaption}>
+                                    Batal
+                                </button>
+                                <button type="button" className="btn-primary" onClick={handleSaveCaption}>
+                                    Simpan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
