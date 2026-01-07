@@ -12,7 +12,7 @@ import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
     List, ListOrdered, Code, Link as LinkIcon, Video, Image, Quote,
     Eye, Code2, Upload, Loader2, FolderOpen, Smile, MousePointerClick,
-    AlignLeft, AlignCenter, AlignRight, AlignJustify
+    AlignLeft, AlignCenter, AlignRight, AlignJustify, Wrench
 } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
 import EmojiPicker from './EmojiPicker';
@@ -202,10 +202,30 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [editingImage, setEditingImage] = useState(null); // { src, alt, node, pos }
     const [captionInput, setCaptionInput] = useState('');
+    const [isToolbarFloating, setIsToolbarFloating] = useState(false);
     const textareaRef = useRef(null);
     const fileInputRef = useRef(null);
     const bulkFileInputRef = useRef(null);
     const editorContainerRef = useRef(null);
+    const toolbarRef = useRef(null);
+    const editorWrapperRef = useRef(null);
+
+    // Detect scroll to make toolbar sticky/floating
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!editorWrapperRef.current) return;
+
+            const editorRect = editorWrapperRef.current.getBoundingClientRect();
+
+            // Make toolbar floating when editor is in view but toolbar would be off-screen
+            // Only float if we're editing (editor top is above viewport but bottom is still visible)
+            const shouldFloat = editorRect.top < -50 && editorRect.bottom > 150;
+            setIsToolbarFloating(shouldFloat);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // TipTap Editor
     const editor = useEditor({
@@ -629,8 +649,8 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
     }
 
     return (
-        <div className="wysiwyg-editor">
-            <div className="editor-toolbar">
+        <div className="wysiwyg-editor" ref={editorWrapperRef}>
+            <div className={`editor-toolbar ${isToolbarFloating ? 'floating' : ''}`} ref={toolbarRef}>
                 {/* Formatting buttons - only show in visual mode */}
                 {mode === 'visual' && (
                     <>
