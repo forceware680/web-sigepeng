@@ -422,3 +422,123 @@ components/
 - Jalankan `git push` untuk deploy otomatis ke Vercel
 - Test di device mobile setelah deployment
 
+---
+
+## Recent Changes (Jan 7, 2026) 🆕
+
+### Editor Toggle Bug Fixes 🐛
+**Problem**: Switching between Visual and Source mode caused:
+1. Extra newlines/spacing appearing (especially around lists)
+2. Numbered lists converting to bullet points
+3. Custom `[IMAGE:...]` and `[VIDEO:...]` syntax appearing as raw text
+4. **Button styling lost** - styled buttons became plain links
+
+**Root Cause**:
+- `htmlToMarkdown()` didn't differentiate between `<ol>` and `<ul>`
+- TipTap wraps `<li>` content in `<p>` tags, causing extra whitespace
+- Custom syntax not being converted back properly
+- Buttons with `class="content-button"` not preserved during conversion
+
+**Solution**:
+1. **Button Preservation**: Added `[BUTTON:text](url)` syntax for styled buttons
+2. **List Handling**: Fixed to properly convert `<ol>` → `1. item` and `<ul>` → `- item`
+3. **Whitespace Cleanup**: Strip `<p>` inside `<li>`, normalize whitespace between tags
+4. **Paragraph Handling**: Better regex for empty paragraphs
+
+**Files Modified**:
+- `components/WysiwygEditor.js` - Complete rewrite of `markdownToHtml()` and `htmlToMarkdown()`
+
+---
+
+### Image Gallery Modal Enhancements 📸
+**New Features**:
+1. **Upload Button in Modal** - Upload images while browsing gallery
+2. **Clipboard Paste (Ctrl+V)** - Paste screenshot/image directly to upload
+3. **Drag & Drop** - Drag files into modal to upload
+4. **Auto-Refresh** - Gallery refreshes after successful upload
+
+**Files Modified**:
+- `components/ImageGalleryModal.js` - Added upload functionality and paste support
+- `app/admin/admin.css` - Styling for upload button, paste hint, drag overlay
+
+---
+
+### Image Caption Edit Feature ✏️
+**New Feature**: Click an image in Visual mode to edit its caption.
+
+**How it works**:
+1. Hover image → Shows blue glow effect
+2. Click image → Opens caption edit modal with preview
+3. Edit caption in input field
+4. Press Enter or click "Simpan" to save
+5. Caption saved as `alt` and `title` attributes
+
+**Files Modified**:
+- `components/WysiwygEditor.js` - Added click handler, edit modal, save/cancel functions
+- `app/admin/admin.css` - Caption modal styling, image hover effects
+
+---
+
+### Floating Toolbar 🔧
+**Feature**: Toolbar melayang di kanan saat scroll ke bawah (untuk konten panjang).
+
+**Behavior by Screen Size**:
+| Size | Behavior |
+|------|----------|
+| Desktop (>768px) | Vertical toolbar on right side |
+| Tablet (≤768px) | Horizontal at bottom, centered |
+| Mobile (≤480px) | Sticky top (floating disabled) |
+
+**Implementation**:
+- Scroll detection via `useEffect` with `getBoundingClientRect()`
+- Auto-toggle `floating` class based on editor visibility
+- CSS transforms for smooth transitions
+
+**Files Modified**:
+- `components/WysiwygEditor.js` - Scroll detection, floating state
+- `app/admin/admin.css` - Floating toolbar styles, mobile responsive
+
+---
+
+### Key Syntax Reference
+
+| Element | Source Mode | Visual Mode |
+|---------|-------------|-------------|
+| Button | `[BUTTON:text](url)` | Styled purple button |
+| Image | `[IMAGE:url|caption]` | Rendered image with caption |
+| Video | `[VIDEO:youtube_id]` | YouTube embed placeholder |
+| Link | `[text](url)` | Blue underlined link |
+
+---
+
+### Current Admin Credentials
+- **Username**: `admin`
+- **Password**: `hermangantengsekali`
+
+---
+
+### Current File Structure (Updated)
+```
+components/
+├── WysiwygEditor.js      # TipTap + conversion functions + floating toolbar
+├── ImageGalleryModal.js  # Gallery with upload/paste/drag-drop
+├── EmojiPicker.js        # Emoji selection modal
+└── ...
+
+app/admin/
+├── admin.css             # All admin styling including floating toolbar
+├── create/page.js        # Create tutorial with editor
+├── edit/[id]/page.js     # Edit tutorial with editor
+└── ...
+```
+
+---
+
+### Testing Notes
+- ✅ Toggle between Visual/Source preserves formatting
+- ✅ Buttons remain styled after toggle
+- ✅ Lists stay numbered/bulleted correctly
+- ✅ Images can be captioned via click
+- ✅ Gallery supports upload/paste/drag-drop
+- ✅ Floating toolbar works on desktop
+- ✅ Mobile responsive (toolbar sticky, not floating)
