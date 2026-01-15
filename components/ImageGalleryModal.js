@@ -67,28 +67,110 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
         }
     };
 
+    // Compress image if too large (for Vercel's 4.5MB body limit)
+    const compressImage = (file, maxSizeMB = 2, maxWidthOrHeight = 2048) => {
+        return new Promise((resolve, reject) => {
+            // If file is small enough, don't compress
+            if (file.size <= maxSizeMB * 1024 * 1024) {
+                resolve(file);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new window.Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let { width, height } = img;
+
+                    // Scale down if too large
+                    if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+                        if (width > height) {
+                            height = (height / width) * maxWidthOrHeight;
+                            width = maxWidthOrHeight;
+                        } else {
+                            width = (width / height) * maxWidthOrHeight;
+                            height = maxWidthOrHeight;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Try different quality levels
+                    let quality = 0.9;
+                    const tryCompress = () => {
+                        canvas.toBlob(
+                            (blob) => {
+                                if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.3) {
+                                    quality -= 0.1;
+                                    tryCompress();
+                                } else {
+                                    const compressedFile = new File([blob], file.name, {
+                                        type: 'image/jpeg',
+                                        lastModified: Date.now(),
+                                    });
+                                    resolve(compressedFile);
+                                }
+                            },
+                            'image/jpeg',
+                            quality
+                        );
+                    };
+                    tryCompress();
+                };
+                img.onerror = () => reject(new Error('Failed to load image for compression'));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+        });
+    };
+
     const uploadImage = async (file) => {
         if (!file.type.startsWith('image/')) {
             alert('File harus berupa gambar');
             return;
         }
 
-        if (file.size > 10 * 1024 * 1024) {
-            alert('Ukuran file maksimal 10MB');
+        // Increase limit check since we'll compress
+        if (file.size > 20 * 1024 * 1024) {
+            alert('Ukuran file maksimal 20MB');
             return;
         }
 
         setUploading(true);
-        setUploadProgress('Mengupload...');
+        setUploadProgress('Memproses...');
 
         try {
+            // Compress image if needed
+            let fileToUpload = file;
+            if (file.size > 2 * 1024 * 1024) {
+                setUploadProgress('Mengkompres gambar...');
+                fileToUpload = await compressImage(file);
+            }
+
+            setUploadProgress('Mengupload...');
+
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append('image', fileToUpload);
 
             const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData,
             });
+
+            // Handle non-JSON responses (like Vercel's "Request Entity Too Large")
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                if (text.includes('Request Entity Too Large') || response.status === 413) {
+                    throw new Error('Gambar terlalu besar. Coba gunakan gambar yang lebih kecil.');
+                }
+                throw new Error(`Server error: ${text.substring(0, 100)}`);
+            }
 
             const result = await response.json();
 
