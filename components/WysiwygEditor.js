@@ -118,6 +118,31 @@ const htmlToMarkdown = (html) => {
         return items.length > 0 ? items.join('\n') + '\n' : '';
     });
 
+    // Handle images - extract src, alt, and title in any order
+    // This regex handles all variations of img tags
+    result = result.replace(/<img\s+([^>]*)\/?\s*>/gi, (match, attrs) => {
+        let src = '', alt = '', title = '';
+
+        // Extract src
+        const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
+        if (srcMatch) src = srcMatch[1];
+
+        // Extract alt
+        const altMatch = attrs.match(/alt=["']([^"']*)["']/i);
+        if (altMatch) alt = altMatch[1];
+
+        // Extract title
+        const titleMatch = attrs.match(/title=["']([^"']*)["']/i);
+        if (titleMatch) title = titleMatch[1];
+
+        // Use alt or title as caption
+        const caption = alt || title || '';
+
+        if (!src) return ''; // Skip if no src
+
+        return caption ? `[IMAGE:${src}|${caption}]` : `[IMAGE:${src}]`;
+    });
+
     return result
         // Headers
         .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
@@ -136,9 +161,6 @@ const htmlToMarkdown = (html) => {
         .replace(/<code>(.*?)<\/code>/gi, '`$1`')
         // Regular links (not buttons - already processed above)
         .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
-        // Images
-        .replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, '[IMAGE:$1|$2]')
-        .replace(/<img[^>]*src="([^"]*)"[^>]*\/?>/gi, '[IMAGE:$1]')
         // Blockquote
         .replace(/<blockquote[^>]*><p>(.*?)<\/p><\/blockquote>/gi, '> $1\n')
         .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n')
