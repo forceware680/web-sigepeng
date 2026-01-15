@@ -21,39 +21,65 @@ import EmojiPicker from './EmojiPicker';
 const markdownToHtml = (markdown) => {
     if (!markdown) return '';
 
-    // Check if content is already HTML (starts with < tag)
-    if (markdown.trim().startsWith('<')) {
-        return markdown;
-    }
-
     let result = markdown;
 
-    // Process ordered lists (numbered: 1. 2. 3.) - group consecutive lines
-    result = result.replace(/^(\d+\. .+(?:\n\d+\. .+)*)/gm, (match) => {
-        const items = match.split('\n').map(line => {
-            const text = line.replace(/^\d+\. /, '').trim();
-            return `<li><p>${text}</p></li>`;
-        }).join('');
-        return `<ol>${items}</ol>`;
-    });
-
-    // Process unordered lists (bullet: - item) - group consecutive lines
-    result = result.replace(/^(- .+(?:\n- .+)*)/gm, (match) => {
-        const items = match.split('\n').map(line => {
-            const text = line.replace(/^- /, '').trim();
-            return `<li><p>${text}</p></li>`;
-        }).join('');
-        return `<ul>${items}</ul>`;
-    });
-
-    return result
+    // First, always process custom embed syntax (IMAGE, VIDEO, BUTTON)
+    // These need to be processed even if content is already HTML
+    result = result
         // Custom BUTTON syntax: [BUTTON:text](url) - restore button styling
         .replace(/\[BUTTON:([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="content-button" data-button>$1</a>')
         // Custom IMAGE syntax: [IMAGE:url|caption] or [IMAGE:url]
         .replace(/\[IMAGE:([^\]|]+)\|([^\]]*)\]/g, '<img src="$1" alt="$2" title="$2" />')
         .replace(/\[IMAGE:([^\]]+)\]/g, '<img src="$1" alt="" />')
         // Custom VIDEO syntax: [VIDEO:id]
-        .replace(/\[VIDEO:([^\]]+)\]/g, '<p>[VIDEO:$1]</p>')
+        .replace(/\[VIDEO:([^\]]+)\]/g, '<p>[VIDEO:$1]</p>');
+
+    // Check if content is already HTML (starts with < tag)
+    // If so, skip markdown processing
+    if (result.trim().startsWith('<')) {
+        return result;
+    }
+
+    // Process ordered lists (numbered: 1. 2. 3.)
+    // Handle lists that may have images or other content between items
+    result = result.replace(/^(\d+\. .+(?:\n(?:\d+\. .+|<img[^>]*>|\[IMAGE:[^\]]+\]))*)/gm, (match) => {
+        const lines = match.split('\n');
+        let html = '<ol>';
+        for (const line of lines) {
+            if (line.match(/^\d+\. /)) {
+                const text = line.replace(/^\d+\. /, '').trim();
+                html += `<li><p>${text}</p></li>`;
+            } else if (line.trim()) {
+                // Non-list content (images, etc.) - close list, add content, reopen
+                html += `</ol>${line}<ol>`;
+            }
+        }
+        html += '</ol>';
+        // Clean up empty <ol></ol> pairs
+        html = html.replace(/<ol><\/ol>/g, '');
+        return html;
+    });
+
+    // Process unordered lists (bullet: - item)
+    result = result.replace(/^(- .+(?:\n(?:- .+|<img[^>]*>|\[IMAGE:[^\]]+\]))*)/gm, (match) => {
+        const lines = match.split('\n');
+        let html = '<ul>';
+        for (const line of lines) {
+            if (line.match(/^- /)) {
+                const text = line.replace(/^- /, '').trim();
+                html += `<li><p>${text}</p></li>`;
+            } else if (line.trim()) {
+                // Non-list content (images, etc.) - close list, add content, reopen
+                html += `</ul>${line}<ul>`;
+            }
+        }
+        html += '</ul>';
+        // Clean up empty <ul></ul> pairs
+        html = html.replace(/<ul><\/ul>/g, '');
+        return html;
+    });
+
+    return result
         // Headers
         .replace(/^### (.+)$/gm, '<h3>$1</h3>')
         .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -95,32 +121,9 @@ const htmlToMarkdown = (html) => {
     result = result.replace(/<a[^>]*data-button[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
     result = result.replace(/<a[^>]*href="([^"]*)"[^>]*data-button[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
 
-    // Process ordered lists - convert to numbered format
-    result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
-        let counter = 1;
-        const items = [];
-        content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
-            const cleanText = text.replace(/<[^>]*>/g, '').trim();
-            if (cleanText) items.push(`${counter++}. ${cleanText}`);
-            return '';
-        });
-        return items.length > 0 ? items.join('\n') + '\n' : '';
-    });
-
-    // Process unordered lists - convert to bullet format
-    result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
-        const items = [];
-        content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
-            const cleanText = text.replace(/<[^>]*>/g, '').trim();
-            if (cleanText) items.push(`- ${cleanText}`);
-            return '';
-        });
-        return items.length > 0 ? items.join('\n') + '\n' : '';
-    });
-
-    // Handle images - extract src, alt, and title in any order
-    // This regex handles all variations of img tags
-    result = result.replace(/<img\s+([^>]*)\/?\s*>/gi, (match, attrs) => {
+    // Handle images FIRST - extract src, alt, and title in any order
+    // This must happen BEFORE list processing so images inside lists are preserved
+    result = result.replace(/<img\s*([^>]*)>/gi, (match, attrs) => {
         let src = '', alt = '', title = '';
 
         // Extract src
@@ -141,6 +144,44 @@ const htmlToMarkdown = (html) => {
         if (!src) return ''; // Skip if no src
 
         return caption ? `[IMAGE:${src}|${caption}]` : `[IMAGE:${src}]`;
+    });
+
+    // Process ordered lists - convert to numbered format
+    // Now images are already converted to [IMAGE:...] so they won't be stripped
+    result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+        let counter = 1;
+        const items = [];
+        content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
+            // Preserve [IMAGE:...], [VIDEO:...], [BUTTON:...] syntax while cleaning HTML
+            const preserved = text.replace(/\[(IMAGE|VIDEO|BUTTON):[^\]]+\]/g, '###PRESERVE$1###');
+            let cleanText = preserved.replace(/<[^>]*>/g, '').trim();
+            cleanText = cleanText.replace(/###PRESERVE(IMAGE|VIDEO|BUTTON)###/g, (m, type) => {
+                // Find original syntax
+                const match = text.match(new RegExp(`\\[${type}:[^\\]]+\\]`));
+                return match ? '\n' + match[0] : '';
+            });
+            if (cleanText) items.push(`${counter++}. ${cleanText}`);
+            return '';
+        });
+        return items.length > 0 ? items.join('\n') + '\n' : '';
+    });
+
+    // Process unordered lists - convert to bullet format
+    result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+        const items = [];
+        content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
+            // Preserve [IMAGE:...], [VIDEO:...], [BUTTON:...] syntax while cleaning HTML
+            const preserved = text.replace(/\[(IMAGE|VIDEO|BUTTON):[^\]]+\]/g, '###PRESERVE$1###');
+            let cleanText = preserved.replace(/<[^>]*>/g, '').trim();
+            cleanText = cleanText.replace(/###PRESERVE(IMAGE|VIDEO|BUTTON)###/g, (m, type) => {
+                // Find original syntax
+                const match = text.match(new RegExp(`\\[${type}:[^\\]]+\\]`));
+                return match ? '\n' + match[0] : '';
+            });
+            if (cleanText) items.push(`- ${cleanText}`);
+            return '';
+        });
+        return items.length > 0 ? items.join('\n') + '\n' : '';
     });
 
     return result
