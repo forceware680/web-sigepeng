@@ -210,9 +210,10 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
 
     return (
         <div className="gallery-modal-overlay" onClick={onClose}>
-            <div
+            <form
                 className={`gallery-modal gallery-modal-with-preview ${isDragging ? 'dragging' : ''}`}
                 onClick={e => e.stopPropagation()}
+                onSubmit={e => e.preventDefault()}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -223,6 +224,7 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                     <div className="gallery-header-actions">
                         {/* Upload Button */}
                         <button
+                            type="button"
                             className="btn-upload-gallery"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
@@ -243,7 +245,7 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                             style={{ display: 'none' }}
                         />
                     </div>
-                    <button className="btn-close" onClick={onClose}>
+                    <button type="button" className="btn-close" onClick={onClose}>
                         <X size={20} />
                     </button>
                 </div>
@@ -273,7 +275,7 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                         ) : error ? (
                             <div className="gallery-error">
                                 <p>❌ {error}</p>
-                                <button onClick={fetchImages}>Coba Lagi</button>
+                                <button type="button" onClick={fetchImages}>Coba Lagi</button>
                             </div>
                         ) : images.length === 0 ? (
                             <div className="gallery-empty">
@@ -281,6 +283,7 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                                 <p>Belum ada gambar di gallery.</p>
                                 <p>Klik tombol Upload atau paste gambar (Ctrl+V)</p>
                                 <button
+                                    type="button"
                                     className="btn-primary"
                                     onClick={() => fileInputRef.current?.click()}
                                 >
@@ -362,10 +365,11 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                         {images.length} gambar
                     </span>
                     <div className="gallery-actions">
-                        <button className="btn-secondary" onClick={onClose}>
+                        <button type="button" className="btn-secondary" onClick={onClose}>
                             Batal
                         </button>
                         <button
+                            type="button"
                             className="btn-primary"
                             onClick={handleSelect}
                             disabled={!selectedImage}
@@ -374,12 +378,12 @@ export default function ImageGalleryModal({ isOpen, onClose, onSelect }) {
                         </button>
                     </div>
                 </div>
-            </div>
+            </form>
 
             {/* Fullscreen Preview Lightbox */}
             {previewImage && (
                 <div className="gallery-lightbox" onClick={(e) => { e.stopPropagation(); closePreview(); }}>
-                    <button className="lightbox-close" onClick={(e) => { e.stopPropagation(); closePreview(); }}>
+                    <button type="button" className="lightbox-close" onClick={(e) => { e.stopPropagation(); closePreview(); }}>
                         <X size={24} />
                     </button>
                     <img src={previewImage.url} alt="" onClick={e => e.stopPropagation()} />
