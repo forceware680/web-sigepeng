@@ -45,18 +45,32 @@ const markdownToHtml = (markdown) => {
     result = result.replace(/^(\d+\. .+(?:\n(?:\d+\. .+|<img[^>]*>|\[IMAGE:[^\]]+\]))*)/gm, (match) => {
         const lines = match.split('\n');
         let html = '<ol>';
+        let itemCount = 0;
+        let needsStart = false;
+
         for (const line of lines) {
             if (line.match(/^\d+\. /)) {
+                itemCount++;
+                if (needsStart) {
+                    // Continue numbering from where we left off
+                    html += `<ol start="${itemCount}">`;
+                    needsStart = false;
+                }
                 const text = line.replace(/^\d+\. /, '').trim();
                 html += `<li><p>${text}</p></li>`;
             } else if (line.trim()) {
-                // Non-list content (images, etc.) - close list, add content, reopen
-                html += `</ol>${line}<ol>`;
+                // Non-list content (images, etc.) - close list, add content
+                html += `</ol>${line}`;
+                needsStart = true; // Next list item needs start attribute
             }
         }
-        html += '</ol>';
+
+        if (!needsStart) {
+            html += '</ol>';
+        }
+
         // Clean up empty <ol></ol> pairs
-        html = html.replace(/<ol><\/ol>/g, '');
+        html = html.replace(/<ol[^>]*><\/ol>/g, '');
         return html;
     });
 
