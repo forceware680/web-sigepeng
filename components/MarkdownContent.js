@@ -6,6 +6,14 @@ import ImageEmbed from './ImageEmbed';
 export default function MarkdownContent({ content }) {
     if (!content) return null;
 
+    // Check if content is HTML (starts with < or contains HTML tags)
+    const isHtml = content.trim().startsWith('<') || /<[a-z][\s\S]*>/i.test(content);
+
+    // If content is HTML, handle it specially to preserve structure
+    if (isHtml) {
+        return renderHtmlContent(content);
+    }
+
     // Parse content and extract embeds
     const parseContent = (text) => {
         const parts = [];
@@ -90,7 +98,7 @@ export default function MarkdownContent({ content }) {
 
     // Simple markdown to HTML converter
     const parseMarkdown = (text) => {
-        return text
+        let result = text
             // Headers
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
             .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -106,14 +114,32 @@ export default function MarkdownContent({ content }) {
             // Links
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
             // Blockquote - must come before list items
-            .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-            // Unordered lists
-            .replace(/^\- (.*$)/gim, '<li>$1</li>')
-            // Ordered lists
-            .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
-            // Line breaks
+            .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+        // Process ordered lists - group consecutive numbered items
+        result = result.replace(/^(\d+\. .+(?:\n\d+\. .+)*)/gm, (match) => {
+            const items = match.split('\n').map(line => {
+                const text = line.replace(/^\d+\. /, '').trim();
+                return `<li>${text}</li>`;
+            }).join('');
+            return `<ol>${items}</ol>`;
+        });
+
+        // Process unordered lists - group consecutive bullet items
+        result = result.replace(/^(- .+(?:\n- .+)*)/gm, (match) => {
+            const items = match.split('\n').map(line => {
+                const text = line.replace(/^- /, '').trim();
+                return `<li>${text}</li>`;
+            }).join('');
+            return `<ul>${items}</ul>`;
+        });
+
+        // Line breaks
+        result = result
             .replace(/\n\n/g, '</p><p>')
             .replace(/\n/g, '<br />');
+
+        return result;
     };
 
     const parts = parseContent(content);
@@ -159,6 +185,84 @@ export default function MarkdownContent({ content }) {
                     <div
                         key={part.key}
                         dangerouslySetInnerHTML={{ __html: html }}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+// Render HTML content directly, handling VIDEO embeds
+function renderHtmlContent(content) {
+    // Split by VIDEO embed pattern only (images in HTML are already handled by browser)
+    const videoPattern = /\[VIDEO:([^\]]+)\]/g;
+    const parts = [];
+    let key = 0;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = videoPattern.exec(content)) !== null) {
+        // Add HTML before this match
+        if (match.index > lastIndex) {
+            const htmlBefore = content.substring(lastIndex, match.index);
+            if (htmlBefore.trim()) {
+                parts.push({
+                    type: 'html',
+                    content: htmlBefore,
+                    key: key++
+                });
+            }
+        }
+
+        // Add video embed
+        parts.push({
+            type: 'video',
+            videoId: match[1].trim(),
+            key: key++
+        });
+
+        lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining HTML
+    if (lastIndex < content.length) {
+        const remaining = content.substring(lastIndex);
+        if (remaining.trim()) {
+            parts.push({
+                type: 'html',
+                content: remaining,
+                key: key++
+            });
+        }
+    }
+
+    // If no video embeds, render as single HTML block
+    if (parts.length === 0 || (parts.length === 1 && parts[0].type === 'html')) {
+        return (
+            <div
+                className="markdown-content"
+                dangerouslySetInnerHTML={{ __html: content }}
+            />
+        );
+    }
+
+    // Render parts with video embeds
+    return (
+        <div className="markdown-content">
+            {parts.map((part) => {
+                if (part.type === 'video') {
+                    return (
+                        <div key={part.key} className="content-embed">
+                            <YouTubeEmbed videoId={part.videoId} title="Embedded Video" />
+                        </div>
+                    );
+                }
+
+                // HTML content - render directly
+                return (
+                    <div
+                        key={part.key}
+                        dangerouslySetInnerHTML={{ __html: part.content }}
                     />
                 );
             })}

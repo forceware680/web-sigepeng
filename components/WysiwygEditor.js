@@ -161,9 +161,12 @@ const htmlToMarkdown = (html) => {
     });
 
     // Process ordered lists - convert to numbered format
-    // Now images are already converted to [IMAGE:...] so they won't be stripped
-    result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
-        let counter = 1;
+    // Read the start attribute to preserve numbering when lists are split
+    result = result.replace(/<ol([^>]*)>([\s\S]*?)<\/ol>/gi, (match, olAttrs, content) => {
+        // Check for start attribute
+        const startMatch = olAttrs.match(/start=["']?(\d+)["']?/i);
+        let counter = startMatch ? parseInt(startMatch[1], 10) : 1;
+
         const items = [];
         content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, text) => {
             // Preserve [IMAGE:...], [VIDEO:...], [BUTTON:...] syntax while cleaning HTML
