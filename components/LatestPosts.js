@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Newspaper } from 'lucide-react';
 
 export default function LatestPosts({ currentSlug, limit = 5 }) {
     const [posts, setPosts] = useState([]);
@@ -30,22 +31,33 @@ export default function LatestPosts({ currentSlug, limit = 5 }) {
         }
     };
 
+    const title = (
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Newspaper size={18} /> Postingan Terbaru
+        </h3>
+    );
+
     if (loading) {
         return (
             <div className="latest-posts-widget">
-                <h3>📰 Postingan Terbaru</h3>
+                {title}
                 <div className="widget-loading">Memuat...</div>
             </div>
         );
     }
 
     if (posts.length === 0) {
-        return null;
+        return (
+            <aside className="latest-posts-widget">
+                {title}
+                <p className="empty-state-text">Belum ada postingan.</p>
+            </aside>
+        );
     }
 
     return (
         <aside className="latest-posts-widget">
-            <h3>📰 Postingan Terbaru</h3>
+            {title}
             <ul className="latest-posts-list">
                 {posts.map(post => (
                     <li key={post.id}>

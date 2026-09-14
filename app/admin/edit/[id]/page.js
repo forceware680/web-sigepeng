@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Video, Image, FolderOpen } from 'lucide-react';
+import { Trash2, Video, Image, FolderOpen, Pencil, Calendar, Save, ArrowLeft } from 'lucide-react';
 import WysiwygEditor from '@/components/WysiwygEditor';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
 
@@ -177,14 +177,20 @@ export default function EditTutorial() {
     return (
         <div className="admin-container">
             <header className="admin-header">
-                <h1>✏️ Edit Tutorial</h1>
-                <Link href="/admin" className="btn-secondary">← Kembali</Link>
+                <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Pencil size={24} /> Edit Tutorial
+                </h1>
+                <Link href="/admin" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <ArrowLeft size={16} /> Kembali
+                </Link>
             </header>
 
             <form onSubmit={handleSubmit} className="tutorial-form">
                 {/* Publishing Options - Top Bar */}
                 <div className="form-section-card" style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>📅 Opsi Publikasi</h3>
+                    <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Calendar size={16} /> Opsi Publikasi
+                    </h3>
                     <div className="form-row">
                         <div className="form-group" style={{ flex: 1 }}>
                             <label htmlFor="status">Status</label>
@@ -370,8 +376,8 @@ export default function EditTutorial() {
                 </div>
 
                 <div className="form-actions">
-                    <button type="submit" className="btn-primary" disabled={loading}>
-                        {loading ? 'Menyimpan...' : '💾 Update Tutorial'}
+                    <button type="submit" className="btn-primary" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {loading ? 'Menyimpan...' : <><Save size={18} /> Update Tutorial</>}
                     </button>
                 </div>
             </form>

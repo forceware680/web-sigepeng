@@ -1,19 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Clock, Eye } from 'lucide-react';
+import { Clock, Eye, Folder } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 export default function PostCard({ tutorial, category }) {
     // Generate thumbnail
     const getThumbnail = () => {
-        // Debug: Log media data
-        console.log('Tutorial:', tutorial.title);
-        console.log('Media:', tutorial.media);
-        console.log('Content:', tutorial.content?.substring(0, 200));
-
         // Priority 1: Custom thumbnail
         if (tutorial.thumbnail) {
-            console.log('Using custom thumbnail:', tutorial.thumbnail);
             return tutorial.thumbnail;
         }
 
@@ -21,7 +16,6 @@ export default function PostCard({ tutorial, category }) {
         if (tutorial.media && Array.isArray(tutorial.media) && tutorial.media.length > 0) {
             const image = tutorial.media.find(m => m.type === 'image' && m.url);
             if (image?.url) {
-                console.log('Using image from media array:', image.url);
                 return image.url;
             }
         }
@@ -32,14 +26,12 @@ export default function PostCard({ tutorial, category }) {
             const imageMatch = tutorial.content.match(/\[IMAGE:([^\]]+)\]/);
             if (imageMatch && imageMatch[1]) {
                 const imageUrl = imageMatch[1].split('|')[0].trim();
-                console.log('Using image from content [IMAGE:]:', imageUrl);
                 return imageUrl;
             }
 
             // Try <img src="url"> format
             const imgTagMatch = tutorial.content.match(/<img[^>]+src="([^"]+)"/);
             if (imgTagMatch && imgTagMatch[1]) {
-                console.log('Using image from content <img>:', imgTagMatch[1]);
                 return imgTagMatch[1];
             }
         }
@@ -48,9 +40,7 @@ export default function PostCard({ tutorial, category }) {
         if (tutorial.media && Array.isArray(tutorial.media) && tutorial.media.length > 0) {
             const video = tutorial.media.find(m => m.type === 'video' && m.videoId);
             if (video?.videoId) {
-                const ytThumb = `https://img.youtube.com/vi/${video.videoId}/maxresdefault.jpg`;
-                console.log('Using YouTube thumbnail:', ytThumb);
-                return ytThumb;
+                return `https://img.youtube.com/vi/${video.videoId}/maxresdefault.jpg`;
             }
         }
 
@@ -59,14 +49,11 @@ export default function PostCard({ tutorial, category }) {
             const videoMatch = tutorial.content.match(/\[VIDEO:([^\]]+)\]/);
             if (videoMatch && videoMatch[1]) {
                 const videoId = videoMatch[1].trim();
-                const ytThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-                console.log('Using YouTube from content:', ytThumb);
-                return ytThumb;
+                return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
             }
         }
 
         // Priority 6: Default placeholder
-        console.log('Using placeholder');
         return '/placeholder-tutorial.jpg';
     };
 
@@ -143,7 +130,10 @@ export default function PostCard({ tutorial, category }) {
                 />
                 {category && (
                     <div className="post-card-category">
-                        {category.icon && <span>{category.icon}</span>}
+                        {(() => {
+                            const Icon = LucideIcons[category.icon] || Folder;
+                            return <Icon size={14} />;
+                        })()}
                         <span>{category.name}</span>
                     </div>
                 )}

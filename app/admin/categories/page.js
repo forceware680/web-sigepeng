@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import * as LucideIcons from 'lucide-react';
+import { Folder, Plus, Pencil, Save, Trash2, AlertTriangle, ArrowLeft, ChevronRight } from 'lucide-react';
 
 // Available icons for category selection
 const AVAILABLE_ICONS = [
@@ -161,7 +162,7 @@ export default function CategoriesPage() {
             // Don't show the current editing category or its descendants as parent options
             if (node.id === excludeId) return;
 
-            const prefix = '—'.repeat(depth);
+            const prefix = '-'.repeat(depth);
             options.push({
                 id: node.id,
                 label: depth > 0 ? `${prefix} ${node.name}` : node.name
@@ -201,11 +202,15 @@ export default function CategoriesPage() {
         <div className="admin-container">
             <header className="admin-header">
                 <div className="admin-header-left">
-                    <h1>📁 Manajemen Kategori</h1>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Folder size={24} /> Manajemen Kategori
+                    </h1>
                     <p>Kelola kategori dan subkategori untuk menu tutorial</p>
                 </div>
                 <div className="admin-header-right">
-                    <Link href="/admin" className="btn-secondary">← Kembali</Link>
+                    <Link href="/admin" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <ArrowLeft size={16} /> Kembali
+                    </Link>
                 </div>
             </header>
 
@@ -213,25 +218,31 @@ export default function CategoriesPage() {
                 <button
                     onClick={() => { resetForm(); setShowForm(true); }}
                     className="btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                 >
-                    ➕ Tambah Kategori
+                    <Plus size={18} /> Tambah Kategori
                 </button>
             </div>
 
             {showForm && (
                 <div className="form-overlay">
                     <form onSubmit={handleSubmit} className="category-form">
-                        <h2>{editingId ? '✏️ Edit Kategori' : '➕ Tambah Kategori Baru'}</h2>
+                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {editingId ? <><Pencil size={20} /> Edit Kategori</> : <><Plus size={20} /> Tambah Kategori Baru</>}
+                        </h2>
 
                         {error && (
                             <div className="form-error" style={{
-                                color: '#ff6b6b',
-                                background: 'rgba(255,107,107,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                color: '#ef4444',
+                                background: 'rgba(239,68,68,0.1)',
                                 padding: '10px',
                                 borderRadius: '6px',
                                 marginBottom: '15px'
                             }}>
-                                ⚠️ {error}
+                                <AlertTriangle size={16} /> {error}
                             </div>
                         )}
 
@@ -243,7 +254,7 @@ export default function CategoriesPage() {
                                 value={formData.parentId}
                                 onChange={handleChange}
                             >
-                                <option value="">— Tidak Ada (Root) —</option>
+                                <option value="">Tidak Ada (Root)</option>
                                 {parentOptions.map(opt => (
                                     <option key={opt.id} value={opt.id}>{opt.label}</option>
                                 ))}
@@ -314,8 +325,8 @@ export default function CategoriesPage() {
                             <button type="button" onClick={resetForm} className="btn-secondary">
                                 Batal
                             </button>
-                            <button type="submit" className="btn-primary">
-                                {editingId ? '💾 Update' : '💾 Simpan'}
+                            <button type="submit" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <Save size={18} /> {editingId ? 'Update' : 'Simpan'}
                             </button>
                         </div>
                     </form>
@@ -347,7 +358,7 @@ export default function CategoriesPage() {
                                         gap: '6px'
                                     }}>
                                         {category.depth > 0 && (
-                                            <span style={{ color: '#666', fontSize: '12px' }}>↳</span>
+                                            <ChevronRight size={12} style={{ color: '#666' }} />
                                         )}
                                         {category.name}
                                     </span>
@@ -355,11 +366,11 @@ export default function CategoriesPage() {
                                 <td><code>{category.slug}</code></td>
                                 <td>{category.order}</td>
                                 <td className="action-buttons">
-                                    <button onClick={() => handleEdit(category)} className="btn-edit">
-                                        ✏️ Edit
+                                    <button onClick={() => handleEdit(category)} className="btn-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <Pencil size={14} /> Edit
                                     </button>
-                                    <button onClick={() => handleDelete(category.id)} className="btn-delete">
-                                        🗑️ Hapus
+                                    <button onClick={() => handleDelete(category.id)} className="btn-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <Trash2 size={14} /> Hapus
                                     </button>
                                 </td>
                             </tr>

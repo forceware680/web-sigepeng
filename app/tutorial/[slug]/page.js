@@ -8,6 +8,7 @@ import PostActions from '@/components/PostActions';
 import ViewCounter from '@/components/ViewCounter';
 import { getTutorialBySlug, getRelatedTutorials } from '@/lib/tutorials';
 import { readCategories } from '@/lib/categories';
+import { User, Calendar, Pencil, BookOpen, ChevronRight } from 'lucide-react';
 
 // Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic';
@@ -61,22 +62,22 @@ export default async function TutorialPage({ params }) {
         <div className="tutorial-layout">
             {/* Main Article */}
             <article className="tutorial-main">
-                <h1 className="shiny-title">{tutorial.title}</h1>
+                <h1>{tutorial.title}</h1>
 
                 {/* Author, Date, and Actions */}
                 <div className="tutorial-header-row">
                     <div className="tutorial-meta">
                         <span className="tutorial-author">
-                            👤 Ditulis oleh <strong>{tutorial.author || 'Admin'}</strong>
+                            <User size={14} /> Ditulis oleh <strong>{tutorial.author || 'Admin'}</strong>
                         </span>
                         {createdDate && (
                             <span className="tutorial-date">
-                                📅 {createdDate}
+                                <Calendar size={14} /> {createdDate}
                             </span>
                         )}
                         {updatedDate && updatedDate !== createdDate && (
                             <span className="tutorial-updated">
-                                ✏️ Diperbarui: {updatedDate}
+                                <Pencil size={14} /> Diperbarui: {updatedDate}
                             </span>
                         )}
                         <ViewCounter slug={slug} initialViews={tutorial.views || 0} />
@@ -113,7 +114,7 @@ export default async function TutorialPage({ params }) {
                 {/* Related Tutorials Section */}
                 {relatedTutorials.length > 0 && (
                     <section className="related-tutorials">
-                        <h2>📚 Tutorial Lainnya</h2>
+                        <h2><BookOpen size={20} /> Tutorial Lainnya</h2>
                         <div className="related-grid">
                             {relatedTutorials.map(related => {
                                 const category = categories.find(c => c.id === related.categoryId);
@@ -137,7 +138,7 @@ export default async function TutorialPage({ params }) {
                                                     .trim()}...
                                             </p>
                                         </div>
-                                        <span className="related-arrow">→</span>
+                                        <ChevronRight className="related-arrow" size={24} />
                                     </Link>
                                 );
                             })}

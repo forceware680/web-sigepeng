@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { KeyRound } from 'lucide-react';
 
 export default function LoginPage() {
     const { data: session, status } = useSession();
@@ -52,7 +53,9 @@ export default function LoginPage() {
         <div className="login-container">
             <div className="login-card">
                 <div className="login-header">
-                    <h1>🔐 Admin Login</h1>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <KeyRound size={24} /> Admin Login
+                    </h1>
                     <p>Masuk untuk mengelola tutorial</p>
                 </div>
 

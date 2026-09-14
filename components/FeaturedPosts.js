@@ -8,12 +8,15 @@ export default function FeaturedPosts({ limit = 3 }) {
     const [posts, setPosts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         fetchData();
     }, []);
 
     const fetchData = async () => {
+        setLoading(true);
+        setError(false);
         try {
             const [tutorialsRes, categoriesRes] = await Promise.all([
                 fetch('/api/tutorials'),
@@ -32,6 +35,7 @@ export default function FeaturedPosts({ limit = 3 }) {
             setCategories(categoriesData);
         } catch (error) {
             console.error('Failed to fetch featured posts:', error);
+            setError(true);
         } finally {
             setLoading(false);
         }
@@ -46,25 +50,48 @@ export default function FeaturedPosts({ limit = 3 }) {
             <section className="featured-section">
                 <div className="section-header">
                     <TrendingUp size={24} />
-                    <h2>Tutorial Terbaru</h2>
+                    <h2>Postingan Terbaru</h2>
                 </div>
                 <div className="featured-loading">
                     <div className="loading-spinner"></div>
-                    <p>Memuat tutorial...</p>
+                    <p>Memuat postingan...</p>
+                </div>
+            </section>
+        );
+    }
+
+    if (error) {
+        return (
+            <section className="featured-section">
+                <div className="section-header">
+                    <TrendingUp size={24} />
+                    <h2>Postingan Terbaru</h2>
+                </div>
+                <div className="section-empty">
+                    <p>Gagal memuat postingan. Periksa koneksi lalu coba lagi.</p>
+                    <button className="retry-button" onClick={fetchData}>Muat Ulang</button>
                 </div>
             </section>
         );
     }
 
     if (posts.length === 0) {
-        return null;
+        return (
+            <section className="featured-section">
+                <div className="section-header">
+                    <TrendingUp size={24} />
+                    <h2>Postingan Terbaru</h2>
+                </div>
+                <p className="empty-state-text">Belum ada postingan yang dipublikasikan.</p>
+            </section>
+        );
     }
 
     return (
         <section className="featured-section">
             <div className="section-header">
                 <TrendingUp size={24} />
-                <h2>Tutorial Terbaru</h2>
+                <h2>Postingan Terbaru</h2>
             </div>
             <div className="featured-grid">
                 {posts.map(post => (

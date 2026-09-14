@@ -195,13 +195,8 @@ export default function Sidebar() {
             {/* Mobile Header */}
             <div className="mobile-header">
                 <Link href="/" style={{ textDecoration: 'none' }}>
-                    <h1 style={{
-                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
-                    }}>
-                        📚 SIMASET WIKI
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {getIcon('BookOpen', { size: 18 })} SIMASET WIKI
                     </h1>
                 </Link>
                 <button
@@ -222,7 +217,11 @@ export default function Sidebar() {
             {/* Sidebar */}
             <aside className={`sidebar ${isMobileOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <Link href="/"><h1>📚 SIMASET WIKI</h1></Link>
+                    <Link href="/">
+                        <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            {getIcon('BookOpen', { size: 18 })} SIMASET WIKI
+                        </h1>
+                    </Link>
                     <button
                         className="sidebar-close"
                         onClick={() => setIsMobileOpen(false)}
@@ -275,7 +274,9 @@ export default function Sidebar() {
                     )}
                 </nav>
                 <div className="sidebar-footer">
-                    <Link href="/admin" className="admin-link">🔐 Admin</Link>
+                    <Link href="/admin" className="admin-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {getIcon('KeyRound', { size: 14 })} Admin
+                    </Link>
                     <p>© 2025 Tutorial SIMASET</p>
                 </div>
             </aside>

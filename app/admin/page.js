@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Search, X, Eye } from 'lucide-react';
+import { Trash2, Search, X, Eye, BookOpen, Plus, Folder, Users, Pencil } from 'lucide-react';
 import MarkdownContent from '@/components/MarkdownContent';
 import YouTubeEmbed from '@/components/YouTubeEmbed';
 import ImageEmbed from '@/components/ImageEmbed';
@@ -182,7 +182,9 @@ export default function AdminDashboard() {
         <div className="admin-container">
             <header className="admin-header">
                 <div className="admin-header-left">
-                    <h1>📚 Admin Dashboard</h1>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <BookOpen size={24} /> Admin Dashboard
+                    </h1>
                     <p>Selamat datang, {session.user.name}</p>
                 </div>
                 <div className="admin-header-right">
@@ -192,14 +194,14 @@ export default function AdminDashboard() {
             </header>
 
             <div className="admin-actions">
-                <Link href="/admin/create" className="btn-primary">
-                    ➕ Tambah Tutorial
+                <Link href="/admin/create" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Plus size={18} /> Tambah Tutorial
                 </Link>
-                <Link href="/admin/categories" className="btn-secondary">
-                    📁 Kelola Kategori
+                <Link href="/admin/categories" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Folder size={18} /> Kelola Kategori
                 </Link>
-                <Link href="/admin/users" className="btn-secondary">
-                    👤 Kelola Users
+                <Link href="/admin/users" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Users size={18} /> Kelola Users
                 </Link>
 
                 {/* Bulk Delete Button */}
@@ -295,11 +297,11 @@ export default function AdminDashboard() {
                                     >
                                         <Eye size={16} /> Preview
                                     </button>
-                                    <Link href={`/admin/edit/${tutorial.id}`} className="btn-edit">
-                                        ✏️ Edit
+                                    <Link href={`/admin/edit/${tutorial.id}`} className="btn-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <Pencil size={14} /> Edit
                                     </Link>
-                                    <button onClick={() => handleDelete(tutorial.id)} className="btn-delete">
-                                        🗑️ Hapus
+                                    <button onClick={() => handleDelete(tutorial.id)} className="btn-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <Trash2 size={14} /> Hapus
                                     </button>
                                 </td>
                             </tr>
@@ -329,17 +331,17 @@ export default function AdminDashboard() {
                                 <h2>{previewTutorial.title}</h2>
                                 <div className="preview-meta">
                                     {getStatusBadge(previewTutorial)}
-                                    <span className="preview-category">
-                                        📁 {getCategoryName(previewTutorial.categoryId)}
+                                    <span className="preview-category" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <Folder size={14} /> {getCategoryName(previewTutorial.categoryId)}
                                     </span>
                                     {previewTutorial.author && (
-                                        <span className="preview-author">
-                                            ✍️ {previewTutorial.author}
+                                        <span className="preview-author" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <Users size={14} /> {previewTutorial.author}
                                         </span>
                                     )}
                                     {previewTutorial.views > 0 && (
-                                        <span className="preview-views">
-                                            👁️ {previewTutorial.views} views
+                                        <span className="preview-views" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <Eye size={14} /> {previewTutorial.views} views
                                         </span>
                                     )}
                                 </div>
@@ -406,11 +408,12 @@ export default function AdminDashboard() {
                             <button className="btn-secondary" onClick={closePreview}>
                                 Tutup
                             </button>
-                            <Link 
-                                href={`/admin/edit/${previewTutorial.id}`} 
+                            <Link
+                                href={`/admin/edit/${previewTutorial.id}`}
                                 className="btn-primary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                             >
-                                ✏️ Edit Tutorial
+                                <Pencil size={18} /> Edit Tutorial
                             </Link>
                         </div>
                     </div>

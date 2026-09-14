@@ -192,16 +192,16 @@ export default function MarkdownContent({ content }) {
     );
 }
 
-// Render HTML content directly, handling VIDEO embeds
+// Render HTML content directly, handling VIDEO embeds and inline <img> tags
 function renderHtmlContent(content) {
-    // Split by VIDEO embed pattern only (images in HTML are already handled by browser)
-    const videoPattern = /\[VIDEO:([^\]]+)\]/g;
+    // Split by VIDEO embed and <img> tags so images get the zoomable lightbox
+    const embedPattern = /\[VIDEO:([^\]]+)\]|<img\s+[^>]*>/g;
     const parts = [];
     let key = 0;
     let lastIndex = 0;
     let match;
 
-    while ((match = videoPattern.exec(content)) !== null) {
+    while ((match = embedPattern.exec(content)) !== null) {
         // Add HTML before this match
         if (match.index > lastIndex) {
             const htmlBefore = content.substring(lastIndex, match.index);
@@ -214,14 +214,32 @@ function renderHtmlContent(content) {
             }
         }
 
-        // Add video embed
-        parts.push({
-            type: 'video',
-            videoId: match[1].trim(),
-            key: key++
-        });
+        const matchStr = match[0];
 
-        lastIndex = match.index + match[0].length;
+        if (matchStr.startsWith('<img')) {
+            const srcMatch = matchStr.match(/src=["']([^"']+)["']/);
+            const url = srcMatch ? srcMatch[1] : '';
+            const altMatch = matchStr.match(/alt=["']([^"']*)["']/);
+            const titleMatch = matchStr.match(/title=["']([^"']*)["']/);
+            const caption = (titleMatch ? titleMatch[1] : '') || (altMatch ? altMatch[1] : '');
+
+            if (url) {
+                parts.push({
+                    type: 'image',
+                    url,
+                    caption,
+                    key: key++
+                });
+            }
+        } else {
+            parts.push({
+                type: 'video',
+                videoId: match[1].trim(),
+                key: key++
+            });
+        }
+
+        lastIndex = match.index + matchStr.length;
     }
 
     // Add remaining HTML
@@ -254,6 +272,18 @@ function renderHtmlContent(content) {
                     return (
                         <div key={part.key} className="content-embed">
                             <YouTubeEmbed videoId={part.videoId} title="Embedded Video" />
+                        </div>
+                    );
+                }
+
+                if (part.type === 'image') {
+                    return (
+                        <div key={part.key} className="content-embed">
+                            <ImageEmbed
+                                url={part.url}
+                                caption={part.caption}
+                                alt={part.caption || 'Tutorial image'}
+                            />
                         </div>
                     );
                 }

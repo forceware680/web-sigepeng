@@ -96,7 +96,7 @@
 }
 
 .login-button {
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -149,7 +149,7 @@
 
 /* ===== Buttons ===== */
 .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -993,7 +993,7 @@
     margin: 1rem 0;
     padding: 1rem 1.25rem;
     border-left: 4px solid var(--accent);
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+    background: rgba(99, 102, 241, 0.1);
     border-radius: 0 8px 8px 0;
 }
 
@@ -1304,7 +1304,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     border: none;
     color: white;
     cursor: pointer;
@@ -1333,7 +1333,7 @@
 .mode-toggle {
     display: flex;
     align-items: center;
-    background: linear-gradient(145deg, #1a1a1a, #252525);
+    background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 4px;
@@ -1363,7 +1363,7 @@
 }
 
 .mode-btn.active {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    background: var(--accent);
     color: white;
     box-shadow:
         0 4px 15px rgba(99, 102, 241, 0.5),
@@ -1436,7 +1436,7 @@
     font-size: 10px;
     font-weight: 700;
     color: white;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     padding: 2px 6px;
     border-radius: 10px;
     min-width: 20px;
@@ -1544,7 +1544,7 @@
     margin: 1rem 0;
     padding: 1rem 1.25rem;
     border-left: 4px solid var(--accent);
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent);
+    background: rgba(99, 102, 241, 0.1);
     border-radius: 0 8px 8px 0;
     font-style: italic;
     color: var(--text-secondary);
@@ -1592,7 +1592,7 @@
 .tiptap-content .tiptap img:hover {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .tiptap-content .tiptap img::after {
@@ -1823,7 +1823,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -1855,7 +1855,7 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    background: rgba(99, 102, 241, 0.1);
     border-bottom: 1px solid var(--border-color);
     font-size: 0.8rem;
     color: var(--text-secondary);
@@ -1970,13 +1970,13 @@
     right: 8px;
     width: 28px;
     height: 28px;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
+    background: var(--accent);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .gallery-delete {

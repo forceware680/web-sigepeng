@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { User, Key, Plus, Trash2, Save, X, Eye, EyeOff } from 'lucide-react';
+import { User, Key, Plus, Trash2, Save, X, Eye, EyeOff, Pencil, ArrowLeft } from 'lucide-react';
 
 export default function AdminUsersPage() {
     const { data: session, status } = useSession();
@@ -188,7 +188,9 @@ export default function AdminUsersPage() {
                     <p>Tambah, edit, atau hapus akun admin</p>
                 </div>
                 <div className="admin-header-right">
-                    <Link href="/admin" className="btn-secondary">← Kembali</Link>
+                    <Link href="/admin" className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <ArrowLeft size={16} /> Kembali
+                    </Link>
                 </div>
             </header>
 
@@ -309,8 +311,8 @@ export default function AdminUsersPage() {
                                         <span className="changing-password-label">Mengubah password...</span>
                                     ) : (
                                         <>
-                                            <button onClick={() => startEdit(user)} className="btn-edit">
-                                                ✏️ Edit
+                                            <button onClick={() => startEdit(user)} className="btn-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                <Pencil size={14} /> Edit
                                             </button>
                                             <button onClick={() => startChangePassword(user.id)} className="btn-password">
                                                 <Key size={14} /> Password

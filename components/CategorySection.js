@@ -8,12 +8,15 @@ import Link from 'next/link';
 export default function CategorySection({ postsPerCategory = 2 }) {
     const [categoriesWithPosts, setCategoriesWithPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         fetchData();
     }, []);
 
     const fetchData = async () => {
+        setLoading(true);
+        setError(false);
         try {
             const [tutorialsRes, categoriesRes] = await Promise.all([
                 fetch('/api/tutorials'),
@@ -43,6 +46,7 @@ export default function CategorySection({ postsPerCategory = 2 }) {
             setCategoriesWithPosts(grouped);
         } catch (error) {
             console.error('Failed to fetch categories:', error);
+            setError(true);
         } finally {
             setLoading(false);
         }
@@ -59,8 +63,23 @@ export default function CategorySection({ postsPerCategory = 2 }) {
         );
     }
 
+    if (error) {
+        return (
+            <section className="category-section">
+                <div className="section-empty">
+                    <p>Gagal memuat kategori. Periksa koneksi lalu coba lagi.</p>
+                    <button className="retry-button" onClick={fetchData}>Muat Ulang</button>
+                </div>
+            </section>
+        );
+    }
+
     if (categoriesWithPosts.length === 0) {
-        return null;
+        return (
+            <section className="category-section">
+                <p className="empty-state-text">Belum ada kategori yang berisi tutorial.</p>
+            </section>
+        );
     }
 
     return (
