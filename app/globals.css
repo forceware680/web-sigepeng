@@ -797,6 +797,28 @@ body {
 }
 
 
+/* ===== Content Links ===== */
+.main-content a,
+.markdown-content a,
+.editor-preview a {
+  color: #818cf8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.main-content a:visited,
+.markdown-content a:visited,
+.editor-preview a:visited {
+  color: #818cf8;
+}
+
+.main-content a:hover,
+.markdown-content a:hover,
+.editor-preview a:hover {
+  color: #a5b4fc;
+}
+
 /* ===== Content Image Styling ===== */
 .markdown-content img,
 .tutorial-main img {
