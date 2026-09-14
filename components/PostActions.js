@@ -2,17 +2,44 @@
 
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Share2, Edit, MessageCircle } from 'lucide-react';
+import { Edit, MessageCircle } from 'lucide-react';
 
-export default function PostActions({ tutorialId, tutorialTitle, tutorialSlug }) {
+function buildExcerpt(content) {
+    if (!content) return '';
+    const text = String(content)
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\[VIDEO:[^\]]*\]/g, ' ')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/[*_`#]/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;|&apos;/g, "'")
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!text) return '';
+    if (text.length <= 120) return text;
+    return text.slice(0, 120).replace(/\s+\S*$/, '') + '…';
+}
+
+export default function PostActions({ tutorialId, tutorialTitle, tutorialSlug, tutorialContent }) {
     const { data: session } = useSession();
 
-    // Generate WhatsApp share URL
     const shareUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/tutorial/${tutorialSlug}`
         : '';
 
-    const whatsappText = encodeURIComponent(`📚 *${tutorialTitle}*\n\nBaca tutorial ini:\n${shareUrl}`);
+    const title = (tutorialTitle || '').replace(/\*/g, '');
+    const excerpt = buildExcerpt(tutorialContent);
+
+    const parts = [`*${title}*`];
+    if (excerpt) parts.push(excerpt);
+    parts.push(`Baca selengkapnya:\n${shareUrl}`);
+
+    const whatsappText = encodeURIComponent(parts.join('\n\n'));
     const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
 
     const handleShare = () => {
@@ -36,7 +63,7 @@ export default function PostActions({ tutorialId, tutorialTitle, tutorialSlug })
                 <Link
                     href={`/admin/edit/${tutorialId}`}
                     className="btn-edit-post"
-                    title="Edit Tutorial"
+                    title="Edit Post"
                 >
                     <Edit size={18} />
                     <span>Edit</span>

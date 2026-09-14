@@ -128,6 +128,7 @@ export default async function TutorialPage({ params }) {
                         tutorialId={tutorial.id}
                         tutorialTitle={tutorial.title}
                         tutorialSlug={tutorial.slug}
+                        tutorialContent={tutorial.content}
                     />
                 </div>
 
