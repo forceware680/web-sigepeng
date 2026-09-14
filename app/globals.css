@@ -474,6 +474,36 @@ body {
   min-width: 0;
 }
 
+/* ===== Breadcrumb ===== */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.breadcrumb a {
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+  color: var(--accent);
+}
+
+.breadcrumb-sep {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.breadcrumb-disabled {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  cursor: default;
+}
+
 .tutorial-sidebar {
   position: sticky;
   top: 1rem;

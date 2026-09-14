@@ -6,7 +6,7 @@ import LatestPosts from '@/components/LatestPosts';
 import PopularPosts from '@/components/PopularPosts';
 import PostActions from '@/components/PostActions';
 import ViewCounter from '@/components/ViewCounter';
-import { getTutorialBySlug, getRelatedTutorials } from '@/lib/tutorials';
+import { getTutorialBySlug, getRelatedTutorials, readTutorials } from '@/lib/tutorials';
 import { readCategories } from '@/lib/categories';
 import { User, Calendar, Pencil, BookOpen, ChevronRight } from 'lucide-react';
 
@@ -58,10 +58,50 @@ export default async function TutorialPage({ params }) {
     const relatedTutorials = await getRelatedTutorials(tutorial.id, tutorial.categoryId, 3);
     const categories = await readCategories();
 
+    // Build category breadcrumb path (root -> ... -> current category)
+    const categoryPath = [];
+    if (tutorial.categoryId) {
+        let current = categories.find(c => c.id === tutorial.categoryId);
+        while (current) {
+            categoryPath.unshift(current);
+            current = current.parentId ? categories.find(c => c.id === current.parentId) : null;
+        }
+    }
+
+    // Category pages only list posts assigned directly to them (not subcategories),
+    // so only link to categories that actually have posts.
+    const allTutorials = await readTutorials();
+    const postCountByCategory = {};
+    allTutorials.forEach(t => {
+        const id = t.categoryId || 'uncategorized';
+        postCountByCategory[id] = (postCountByCategory[id] || 0) + 1;
+    });
+
     return (
         <div className="tutorial-layout">
             {/* Main Article */}
             <article className="tutorial-main">
+                {/* Breadcrumb */}
+                {categoryPath.length > 0 && (
+                    <nav className="breadcrumb" aria-label="Breadcrumb">
+                        <Link href="/">Beranda</Link>
+                        {categoryPath.map((cat, i) => {
+                            const isLast = i === categoryPath.length - 1;
+                            const hasPosts = (postCountByCategory[cat.id] || 0) > 0;
+                            return (
+                                <span key={cat.id} className="breadcrumb-item">
+                                    <ChevronRight size={14} className="breadcrumb-sep" />
+                                    {isLast || hasPosts ? (
+                                        <Link href={`/category/${cat.slug}`}>{cat.name}</Link>
+                                    ) : (
+                                        <span className="breadcrumb-disabled">{cat.name}</span>
+                                    )}
+                                </span>
+                            );
+                        })}
+                    </nav>
+                )}
+
                 <h1>{tutorial.title}</h1>
 
                 {/* Author, Date, and Actions */}
