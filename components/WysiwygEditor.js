@@ -12,7 +12,7 @@ import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2, Heading3,
     List, ListOrdered, Code, Link as LinkIcon, Video, Image, Quote,
     Eye, Code2, Upload, Loader2, FolderOpen, Smile, MousePointerClick,
-    AlignLeft, AlignCenter, AlignRight, AlignJustify, Wrench
+    AlignLeft, AlignCenter, AlignRight, AlignJustify, Wrench, Trash2
 } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
 import EmojiPicker from './EmojiPicker';
@@ -569,6 +569,25 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
         setCaptionInput('');
     };
 
+    // Delete the selected image from the document
+    const handleDeleteImage = () => {
+        if (!editor || editingImage === null) return;
+
+        const { state, view } = editor;
+        state.doc.descendants((node, pos) => {
+            if (node.type.name === 'image' && node.attrs.src === editingImage.src) {
+                view.dispatch(state.tr.delete(pos, pos + node.nodeSize));
+                return false;
+            }
+        });
+
+        // Trigger content update
+        onChange(editor.getHTML());
+
+        setEditingImage(null);
+        setCaptionInput('');
+    };
+
     // Handle source mode changes
     const handleSourceChange = (e) => {
         const newContent = e.target.value;
@@ -1108,6 +1127,14 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                                 }}
                             />
                             <div className="image-caption-actions">
+                                <button
+                                    type="button"
+                                    className="btn-danger"
+                                    onClick={handleDeleteImage}
+                                    title="Hapus gambar dari postingan"
+                                >
+                                    <Trash2 size={14} /> Hapus
+                                </button>
                                 <button type="button" className="btn-secondary" onClick={handleCancelCaption}>
                                     Batal
                                 </button>
