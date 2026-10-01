@@ -59,22 +59,33 @@ const markdownToHtml = (markdown) => {
 
     let result = markdown;
 
-    // First, always process custom embed syntax (IMAGE, VIDEO, BUTTON)
-    // These need to be processed even if content is already HTML
-    result = result
-        // Custom BUTTON syntax: [BUTTON:text](url) - restore button styling
-        .replace(/\[BUTTON:([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="content-button" data-button>$1</a>')
-        // Custom IMAGE syntax: [IMAGE:url|caption] or [IMAGE:url]
-        .replace(/\[IMAGE:([^\]|]+)\|([^\]]*)\]/g, '<img src="$1" alt="$2" title="$2" />')
-        .replace(/\[IMAGE:([^\]]+)\]/g, '<img src="$1" alt="" />')
-        // Custom VIDEO syntax: [VIDEO:id]
-        .replace(/\[VIDEO:([^\]]+)\]/g, '<p>[VIDEO:$1]</p>');
-
-    // Check if content is already HTML (starts with < tag)
-    // If so, skip markdown processing
+    // Content yang sudah HTML (mis. konten lama dari DB) dikembalikan apa adanya.
+    // PENTING: cek SEBELUM konversi embed, agar markdown yang diawali [IMAGE:...] tidak
+    // terdeteksi sebagai HTML (setelah dikonversi jadi <img> akan mulai dengan '<').
     if (result.trim().startsWith('<')) {
         return result;
     }
+
+    // Process custom embed syntax (IMAGE, VIDEO, BUTTON)
+    result = result
+        // Custom BUTTON syntax: [BUTTON:text](url) - restore button styling
+        .replace(/\[BUTTON:([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="content-button" data-button>$1</a>')
+        // Custom IMAGE syntax: [IMAGE:url|caption|align] (caption & align optional)
+        .replace(/\[IMAGE:([^\]]+)\]/g, (match, inner) => {
+            const parts = inner.split('|');
+            const src = parts[0];
+            const caption = parts[1] || '';
+            const align = parts[2] || '';
+            const alignStyles = {
+                left: 'display: block; margin-right: auto;',
+                center: 'display: block; margin: 0 auto;',
+                right: 'display: block; margin-left: auto;',
+            };
+            const style = alignStyles[align] ? ` style="${alignStyles[align]}"` : '';
+            return `<img src="${src}" alt="${caption}" title="${caption}"${style} />\n`;
+        })
+        // Custom VIDEO syntax: [VIDEO:id]
+        .replace(/\[VIDEO:([^\]]+)\]/g, '<p>[VIDEO:$1]</p>');
 
     // Process ordered lists (numbered: 1. 2. 3.)
     // Handle lists that may have images or other content between items
@@ -199,10 +210,10 @@ const htmlToMarkdown = (html) => {
     result = result.replace(/<a[^>]*data-button[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
     result = result.replace(/<a[^>]*href="([^"]*)"[^>]*data-button[^>]*>(.*?)<\/a>/gi, '[BUTTON:$2]($1)');
 
-    // Handle images FIRST - extract src, alt, and title in any order
+    // Handle images FIRST - extract src, alt, title, and align in any order
     // This must happen BEFORE list processing so images inside lists are preserved
     result = result.replace(/<img\s*([^>]*)>/gi, (match, attrs) => {
-        let src = '', alt = '', title = '';
+        let src = '', alt = '', title = '', align = '';
 
         // Extract src
         const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
@@ -216,12 +227,22 @@ const htmlToMarkdown = (html) => {
         const titleMatch = attrs.match(/title=["']([^"']*)["']/i);
         if (titleMatch) title = titleMatch[1];
 
+        // Extract align from style (margin-based, as rendered by AlignableImage)
+        const styleMatch = attrs.match(/style=["']([^"']*)["']/i);
+        if (styleMatch) {
+            const style = styleMatch[1];
+            if (/margin\s*:\s*0(px)?\s+auto/.test(style)) align = 'center';
+            else if (/margin-left\s*:\s*auto/.test(style)) align = 'right';
+            else if (/margin-right\s*:\s*auto/.test(style)) align = 'left';
+        }
+
         // Use alt or title as caption
         const caption = alt || title || '';
 
         if (!src) return ''; // Skip if no src
 
-        return caption ? `[IMAGE:${src}|${caption}]` : `[IMAGE:${src}]`;
+        if (align) return `[IMAGE:${src}|${caption}|${align}]\n`;
+        return caption ? `[IMAGE:${src}|${caption}]\n` : `[IMAGE:${src}]\n`;
     });
 
     // Process ordered lists - convert to numbered format
