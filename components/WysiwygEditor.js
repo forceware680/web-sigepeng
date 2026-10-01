@@ -17,6 +17,42 @@ import {
 import ImageGalleryModal from './ImageGalleryModal';
 import EmojiPicker from './EmojiPicker';
 
+// Image node with an `align` attribute (text-align doesn't work on <img>,
+// so alignment is rendered via margin styles)
+const AlignableImage = TiptapImage.extend({
+    addAttributes() {
+        return {
+            ...this.parent(),
+            align: {
+                defaultOptions: null,
+                parseHTML: (element) => {
+                    const style = element.getAttribute('style') || '';
+                    if (/margin\s*:\s*0(px)?\s+auto/.test(style)) return 'center';
+                    if (/margin-left\s*:\s*auto/.test(style)) return 'right';
+                    if (/margin-right\s*:\s*auto/.test(style)) return 'left';
+                    return null;
+                },
+                renderHTML: (attributes) => {
+                    if (!attributes.align) return {};
+                    const styles = {
+                        left: 'display: block; margin-right: auto;',
+                        center: 'display: block; margin: 0 auto;',
+                        right: 'display: block; margin-left: auto;',
+                    };
+                    return { style: styles[attributes.align] || '' };
+                },
+            },
+        };
+    },
+    addCommands() {
+        return {
+            ...this.parent(),
+            setImageAlign: (align) => ({ commands }) =>
+                commands.updateAttributes('image', { align }),
+        };
+    },
+});
+
 // Convert Markdown to HTML for loading into TipTap
 const markdownToHtml = (markdown) => {
     if (!markdown) return '';
@@ -386,7 +422,7 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
                 openOnClick: false,
             }),
             Underline,
-            TiptapImage.configure({
+            AlignableImage.configure({
                 inline: false,
                 allowBase64: true,
             }),
@@ -425,6 +461,19 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
         setMode(newMode);
     }, [mode, editor, sourceContent]);
+
+    // Align command that works on both text blocks and images
+    const handleAlign = (align) => {
+        if (!editor) return;
+        if (editor.isActive('image')) {
+            editor.chain().focus().setImageAlign(align === 'justify' ? 'left' : align).run();
+        } else {
+            editor.chain().focus().setTextAlign(align).run();
+        }
+    };
+
+    const isAligned = (align) =>
+        editor?.isActive({ textAlign: align }) || editor?.isActive('image', { align });
 
     // Handle clicks on images in the editor for caption editing
     useEffect(() => {
@@ -885,29 +934,29 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
                         <div className="toolbar-group">
                             <ToolbarButton
-                                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-                                isActive={editor?.isActive({ textAlign: 'left' })}
+                                onClick={() => handleAlign('left')}
+                                isActive={isAligned('left')}
                                 title="Align Left"
                             >
                                 <AlignLeft size={16} />
                             </ToolbarButton>
                             <ToolbarButton
-                                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-                                isActive={editor?.isActive({ textAlign: 'center' })}
+                                onClick={() => handleAlign('center')}
+                                isActive={isAligned('center')}
                                 title="Align Center"
                             >
                                 <AlignCenter size={16} />
                             </ToolbarButton>
                             <ToolbarButton
-                                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-                                isActive={editor?.isActive({ textAlign: 'right' })}
+                                onClick={() => handleAlign('right')}
+                                isActive={isAligned('right')}
                                 title="Align Right"
                             >
                                 <AlignRight size={16} />
                             </ToolbarButton>
                             <ToolbarButton
-                                onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
-                                isActive={editor?.isActive({ textAlign: 'justify' })}
+                                onClick={() => handleAlign('justify')}
+                                isActive={isAligned('justify')}
                                 title="Justify"
                             >
                                 <AlignJustify size={16} />
