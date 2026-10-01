@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readTutorials } from '@/lib/tutorials';
 import { readCategories, getCategoryPath } from '@/lib/categories';
+import { decodeHtmlEntities } from '@/lib/html';
 
 // GET search results
 export async function GET(request) {
@@ -104,7 +105,7 @@ export async function GET(request) {
 function stripMarkdownAndHtml(text) {
     if (!text) return '';
 
-    return text
+    return decodeHtmlEntities(text
         // Remove HTML tags
         .replace(/<[^>]*>/g, '')
         // Remove [VIDEO:...] embeds
@@ -127,7 +128,7 @@ function stripMarkdownAndHtml(text) {
         .replace(/`([^`]+)`/g, '$1')
         // Remove extra whitespace
         .replace(/\s+/g, ' ')
-        .trim();
+        .trim());
 }
 
 // Helper to get excerpt around the matched query

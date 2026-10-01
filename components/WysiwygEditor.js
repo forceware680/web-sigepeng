@@ -93,7 +93,7 @@ const markdownToHtml = (markdown) => {
         return html;
     });
 
-    return result
+    result = result
         // Headers
         .replace(/^### (.+)$/gm, '<h3>$1</h3>')
         .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -103,18 +103,46 @@ const markdownToHtml = (markdown) => {
         // Italic (single asterisk, not part of bold)
         .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>')
         // Code blocks
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/```([\s\S]*?)```/g, (match, code) => `<pre><code>${code.replace(/^\n+|\n+$/g, '')}</code></pre>`)
         // Inline code
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         // Regular links (not BUTTON/IMAGE/VIDEO - already processed)
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-        // Blockquote
-        .replace(/^> (.+)$/gm, '<blockquote><p>$1</p></blockquote>')
-        // Wrap text lines in paragraphs (lines not already wrapped in tags)
-        .replace(/^(?!<[a-z]|$)(.+)$/gm, '<p>$1</p>')
-        // Clean up empty lines and normalize
-        .replace(/\n+/g, '')
-        .replace(/<\/p><p>/g, '</p>\n<p>');
+        // Blockquote - group consecutive "> " lines into a single blockquote
+        .replace(/^(?:> .+\n?)+/gm, (match) => {
+            const lines = match.trim().split('\n').map(l => l.replace(/^> /, ''));
+            return '<blockquote>' + lines.map(l => `<p>${l}</p>`).join('') + '</blockquote>\n';
+        });
+
+    // Wrap text lines in paragraphs (lines not already wrapped in tags),
+    // skipping lines inside code blocks
+    let inCode = false;
+    result = result.split('\n').map(line => {
+        const opens = line.includes('<pre><code>');
+        const closes = line.includes('</code></pre>');
+        if (opens) inCode = true;
+        if (inCode) {
+            if (closes) inCode = false;
+            return line;
+        }
+        if (line.trim() === '' || /^<[a-z]/.test(line)) return line;
+        return `<p>${line}</p>`;
+    }).join('\n');
+
+    // Drop empty lines outside code blocks (keep code block lines intact)
+    inCode = false;
+    result = result.split('\n').filter(line => {
+        const opens = line.includes('<pre><code>');
+        const closes = line.includes('</code></pre>');
+        if (opens) inCode = true;
+        if (inCode) {
+            if (closes) inCode = false;
+            return true;
+        }
+        return line.trim() !== '';
+    }).join('\n');
+
+    return result.replace(/<\/p><p>/g, '</p>\n<p>');
 };
 
 // Convert HTML back to Markdown for source mode
@@ -201,7 +229,7 @@ const htmlToMarkdown = (html) => {
         return items.length > 0 ? items.join('\n') + '\n' : '';
     });
 
-    return result
+    result = result
         // Headers
         .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
         .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n')
@@ -215,13 +243,25 @@ const htmlToMarkdown = (html) => {
         // Underline (keep as HTML)
         .replace(/<u>(.*?)<\/u>/gi, '<u>$1</u>')
         // Code
-        .replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```')
+        .replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, (match, code) => '```\n' + code.replace(/^\n+|\n+$/g, '') + '\n```\n')
         .replace(/<code>(.*?)<\/code>/gi, '`$1`')
         // Regular links (not buttons - already processed above)
         .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
-        // Blockquote
-        .replace(/<blockquote[^>]*><p>(.*?)<\/p><\/blockquote>/gi, '> $1\n')
-        .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n')
+        // Blockquote - split inner paragraphs so multi-line quotes keep their structure
+        .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, inner) => {
+            const parts = inner.match(/<p[^>]*>[\s\S]*?<\/p>/gi) || [inner];
+            const lines = [];
+            for (const part of parts) {
+                const text = part
+                    .replace(/^<p[^>]*>/, '')
+                    .replace(/<\/p>\s*$/, '');
+                text.split(/<br\s*\/?>/gi).forEach(seg => {
+                    const line = seg.trim();
+                    if (line) lines.push('> ' + line);
+                });
+            }
+            return lines.length ? lines.join('\n') + '\n' : '';
+        })
         // Empty paragraphs - remove completely
         .replace(/<p[^>]*>\s*<\/p>/gi, '')
         // Paragraphs with content
@@ -229,14 +269,38 @@ const htmlToMarkdown = (html) => {
         // Line breaks
         .replace(/<br\s*\/?>/gi, '\n')
         // Clean remaining HTML tags
-        .replace(/<\/?[^>]+(>|$)/g, '')
-        // Normalize multiple newlines to max 2
-        .replace(/\n{3,}/g, '\n\n')
-        // Remove leading/trailing whitespace on each line
-        .split('\n').map(line => line.trim()).join('\n')
-        // Final cleanup
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
+        .replace(/<\/?[^>]+(>|$)/g, '');
+
+    // Trim lines outside code fences (preserve code indentation)
+    let inFence = false;
+    result = result.split('\n').map(line => {
+        if (line.trimStart().startsWith('```')) {
+            inFence = !inFence;
+            return line;
+        }
+        return inFence ? line : line.trim();
+    }).join('\n');
+
+    // Collapse 3+ consecutive newlines to 2 outside code fences
+    inFence = false;
+    const out = [];
+    let blankRun = 0;
+    for (const line of result.split('\n')) {
+        if (line.trimStart().startsWith('```')) {
+            inFence = !inFence;
+            blankRun = 0;
+            out.push(line);
+            continue;
+        }
+        if (!inFence && line.trim() === '') {
+            blankRun++;
+            if (blankRun > 1) continue;
+        } else {
+            blankRun = 0;
+        }
+        out.push(line);
+    }
+    return out.join('\n').trim();
 };
 
 // Toolbar Button Component

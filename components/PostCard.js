@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Clock, Eye, Folder } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { decodeHtmlEntities } from '@/lib/html';
 
 export default function PostCard({ tutorial, category }) {
     // Generate thumbnail
@@ -101,10 +102,13 @@ export default function PostCard({ tutorial, category }) {
             .replace(/\s+/g, ' ')
             .trim();
 
-        if (!plainText) return 'Klik untuk membaca selengkapnya...';
-        if (plainText.length <= maxLength) return plainText;
+        // Decode HTML entities (e.g. &gt; -> >) so text isn't shown escaped
+        const text = decodeHtmlEntities(plainText);
 
-        return plainText.substring(0, maxLength).trim() + '...';
+        if (!text) return 'Klik untuk membaca selengkapnya...';
+        if (text.length <= maxLength) return text;
+
+        return text.substring(0, maxLength).trim() + '...';
     };
 
     // Format date

@@ -3,23 +3,18 @@
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Edit, MessageCircle } from 'lucide-react';
+import { decodeHtmlEntities } from '@/lib/html';
 
 function buildExcerpt(content) {
     if (!content) return '';
-    const text = String(content)
+    const text = decodeHtmlEntities(String(content)
         .replace(/<[^>]*>/g, ' ')
         .replace(/\[VIDEO:[^\]]*\]/g, ' ')
         .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
         .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
         .replace(/[*_`#]/g, '')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;|&apos;/g, "'")
-        .replace(/&nbsp;/g, ' ')
         .replace(/\s+/g, ' ')
-        .trim();
+        .trim());
     if (!text) return '';
     if (text.length <= 120) return text;
     return text.slice(0, 120).replace(/\s+\S*$/, '') + '…';

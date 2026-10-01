@@ -46,7 +46,7 @@ export default function ZoomableImage({ src, alt, title, className = "" }) {
                     <button className="lightbox-close" onClick={() => setIsOpen(false)}>
                         <X size={32} />
                     </button>
-                    <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="lightbox-content">
                         <img src={src} alt={alt} className="lightbox-image" />
                         {title && <div className="lightbox-caption">{title}</div>}
                     </div>

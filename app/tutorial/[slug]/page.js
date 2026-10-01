@@ -8,6 +8,7 @@ import PostActions from '@/components/PostActions';
 import ViewCounter from '@/components/ViewCounter';
 import { getTutorialBySlug, getRelatedTutorials, readTutorials } from '@/lib/tutorials';
 import { readCategories } from '@/lib/categories';
+import { decodeHtmlEntities } from '@/lib/html';
 import { User, Calendar, Pencil, BookOpen, ChevronRight } from 'lucide-react';
 
 // Force dynamic rendering - no caching
@@ -26,6 +27,21 @@ export async function generateMetadata({ params }) {
         title: tutorial.title,
         description: tutorial.content?.substring(0, 160) || '',
     };
+}
+
+// Build a plain-text excerpt from raw (HTML/markdown) content
+function getExcerpt(content, maxLength = 100) {
+    if (!content) return '';
+    const text = decodeHtmlEntities(
+        String(content)
+            .replace(/\[(VIDEO|IMAGE):[^\]]+\]/g, '') // Remove custom embeds
+            .replace(/<[^>]*>?/gm, '') // Remove HTML tags
+            .replace(/[#*`\[\]]/g, '') // Remove remaining markdown chars
+            .replace(/\s+/g, ' ')
+            .trim()
+    );
+    if (!text) return '';
+    return text.length <= maxLength ? text : text.substring(0, maxLength).trim() + '...';
 }
 
 // Format date to Indonesian locale
@@ -171,12 +187,7 @@ export default async function TutorialPage({ params }) {
                                                 <span className="related-category">{category.name}</span>
                                             )}
                                             <p className="related-excerpt">
-                                                {related.content
-                                                    ?.replace(/\[(VIDEO|IMAGE):[^\]]+\]/g, '') // Remove custom embeds
-                                                    .replace(/<[^>]*>?/gm, '') // Remove HTML tags
-                                                    .replace(/[#*`>\[\]]/g, '') // Remove remaining markdown chars
-                                                    .substring(0, 100)
-                                                    .trim()}...
+                                                {getExcerpt(related.content)}
                                             </p>
                                         </div>
                                         <ChevronRight className="related-arrow" size={24} />
