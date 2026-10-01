@@ -1,9 +1,9 @@
 import ZoomableImage from './ZoomableImage';
 
 const ALIGN_STYLES = {
-    left: 'width: fit-content; margin: 1rem 0;',
-    center: 'width: fit-content; margin: 1rem auto;',
-    right: 'width: fit-content; margin: 1rem 0 1rem auto;',
+    left: { width: 'fit-content', margin: '1rem 0' },
+    center: { width: 'fit-content', margin: '1rem auto' },
+    right: { width: 'fit-content', margin: '1rem 0 1rem auto' },
 };
 
 export default function ImageEmbed({ url, title = "", caption = "", alt = "", align = "" }) {
