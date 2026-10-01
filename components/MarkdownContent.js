@@ -47,13 +47,14 @@ export default function MarkdownContent({ content }) {
                     key: key++
                 });
             }
-            // Handle [IMAGE:...]
+            // Handle [IMAGE:...] - format: url|caption|align (caption & align optional)
             else if (match[1] === 'IMAGE') {
-                const [url, caption] = match[2].split('|').map(s => s.trim());
+                const [url, caption, align] = match[2].split('|').map(s => s.trim());
                 parts.push({
                     type: 'image',
                     url: url,
                     caption: caption || '',
+                    align: ['left', 'center', 'right'].includes(align) ? align : '',
                     key: key++
                 });
             }
@@ -68,11 +69,22 @@ export default function MarkdownContent({ content }) {
                 const titleMatch = matchStr.match(/title="([^"]+)"/);
                 const caption = (altMatch ? altMatch[1] : '') || (titleMatch ? titleMatch[1] : '');
 
+                // Extract align from style (margin-based)
+                const styleMatch = matchStr.match(/style="([^"]*)"/);
+                let align = '';
+                if (styleMatch) {
+                    const style = styleMatch[1];
+                    if (/margin\s*:\s*0(px)?\s+auto/.test(style)) align = 'center';
+                    else if (/margin-left\s*:\s*auto/.test(style)) align = 'right';
+                    else if (/margin-right\s*:\s*auto/.test(style)) align = 'left';
+                }
+
                 if (url) {
                     parts.push({
                         type: 'image',
                         url: url,
                         caption: caption,
+                        align: align,
                         key: key++
                     });
                 }
@@ -174,6 +186,7 @@ export default function MarkdownContent({ content }) {
                                 url={part.url}
                                 caption={part.caption}
                                 alt={part.caption || "Tutorial image"}
+                                align={part.align}
                             />
                         </div>
                     );
@@ -223,11 +236,22 @@ function renderHtmlContent(content) {
             const titleMatch = matchStr.match(/title=["']([^"']*)["']/);
             const caption = (titleMatch ? titleMatch[1] : '') || (altMatch ? altMatch[1] : '');
 
+            // Extract align from style (margin-based)
+            const styleMatch = matchStr.match(/style=["']([^"']*)["']/);
+            let align = '';
+            if (styleMatch) {
+                const style = styleMatch[1];
+                if (/margin\s*:\s*0(px)?\s+auto/.test(style)) align = 'center';
+                else if (/margin-left\s*:\s*auto/.test(style)) align = 'right';
+                else if (/margin-right\s*:\s*auto/.test(style)) align = 'left';
+            }
+
             if (url) {
                 parts.push({
                     type: 'image',
                     url,
                     caption,
+                    align,
                     key: key++
                 });
             }
@@ -283,6 +307,7 @@ function renderHtmlContent(content) {
                                 url={part.url}
                                 caption={part.caption}
                                 alt={part.caption || 'Tutorial image'}
+                                align={part.align}
                             />
                         </div>
                     );
