@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import PostCard from './PostCard';
 import { TrendingUp } from 'lucide-react';
+import { ANNOUNCEMENT_CATEGORY_ID } from '@/lib/constants';
 
 export default function FeaturedPosts({ limit = 3 }) {
     const [posts, setPosts] = useState([]);
@@ -26,8 +27,9 @@ export default function FeaturedPosts({ limit = 3 }) {
             const tutorialsData = await tutorialsRes.json();
             const categoriesData = await categoriesRes.json();
 
-            // Get latest posts
+            // Get latest posts (pengumuman punya section sendiri di homepage)
             const sortedPosts = tutorialsData
+                .filter(t => t.categoryId !== ANNOUNCEMENT_CATEGORY_ID)
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .slice(0, limit);
 

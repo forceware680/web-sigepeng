@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import PostCard from './PostCard';
 import { ChevronRight, Folder } from 'lucide-react';
 import Link from 'next/link';
+import { ANNOUNCEMENT_CATEGORY_ID } from '@/lib/constants';
 
 export default function CategorySection({ postsPerCategory = 2 }) {
     const [categoriesWithPosts, setCategoriesWithPosts] = useState([]);
@@ -26,8 +27,9 @@ export default function CategorySection({ postsPerCategory = 2 }) {
             const tutorials = await tutorialsRes.json();
             const categories = await categoriesRes.json();
 
-            // Group tutorials by category
+            // Group tutorials by category (pengumuman punya section sendiri di homepage)
             const grouped = categories
+                .filter(category => category.id !== ANNOUNCEMENT_CATEGORY_ID)
                 .map(category => {
                     const categoryPosts = tutorials
                         .filter(t => t.categoryId === category.id)

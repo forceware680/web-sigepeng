@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { GraduationCap, Video, BookOpen, RefreshCw, ArrowLeft, Menu } from 'lucide-react';
 import FeaturedPosts from '@/components/FeaturedPosts';
 import CategorySection from '@/components/CategorySection';
+import Announcements from '@/components/Announcements';
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
@@ -44,6 +45,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Announcements Section */}
+      <Announcements />
 
       {/* Featured Posts Section */}
       <FeaturedPosts limit={3} />
