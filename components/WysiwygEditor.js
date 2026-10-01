@@ -1066,7 +1066,7 @@ export default function WysiwygEditor({ value, onChange, placeholder = "Tulis ko
 
             <div className="editor-help">
                 {mode === 'visual' ? (
-                    <span>💡 Mode Visual: Klik gambar untuk edit caption. Switch ke Source untuk edit markdown.</span>
+                    <span>💡 Mode Visual: Klik gambar untuk edit caption — klik lagi lalu Delete untuk hapus. Untuk align: pilih gambar lalu klik ikon rata kiri/tengah/kanan. Switch ke Source untuk edit markdown.</span>
                 ) : (
                     <span>💡 Mode Source: Edit kode markdown. Gunakan <code>[VIDEO:id]</code> dan <code>[IMAGE:url|caption]</code> untuk embed.</span>
                 )}

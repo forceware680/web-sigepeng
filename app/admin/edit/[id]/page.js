@@ -278,7 +278,11 @@ export default function EditTutorial() {
 
                 {/* Media Builder Section */}
                 <div className="form-group">
-                    <label>Media (Video & Gambar)</label>
+                    <label>Media Tambahan (Video & Gambar)</label>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0.5rem' }}>
+                        Tampil sebagai galeri di <strong>atas konten</strong> postingan — terpisah dari gambar di editor WYSIWYG.
+                        Gambar dalam editor dihapus dengan klik gambar lalu tekan Delete.
+                    </p>
                     <div className="media-builder">
                         <div className="media-actions">
                             <button type="button" className="btn-add-media" onClick={() => addMedia('video')}>
