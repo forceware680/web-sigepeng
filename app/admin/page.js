@@ -297,8 +297,8 @@ export default function AdminDashboard() {
                                     >
                                         <Eye size={16} /> Preview
                                     </button>
-                                    <Link href={`/admin/edit/${tutorial.id}`} className="btn-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <Pencil size={14} /> Edit
+                                    <Link href={`/admin/edit/${tutorial.id}`} className="btn-edit" title="Edit" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Pencil size={14} />
                                     </Link>
                                     <button onClick={() => handleDelete(tutorial.id)} className="btn-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                                         <Trash2 size={14} /> Hapus
